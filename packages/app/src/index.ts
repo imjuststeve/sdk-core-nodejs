@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: index.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Friday, 22nd February 2019 4:38:47 pm
+ * @Last modified time: Monday, 25th February 2019 10:52:39 am
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -20,7 +20,6 @@ import { validateConfigFile } from './validator'
 import { XyoError, XyoErrors } from '@xyo-network/errors'
 import { CatalogueItem } from '@xyo-network/network'
 import { IXyoComponentFeatureResponse } from '@xyo-network/node-network'
-import { fstat } from 'fs'
 
 export class XyoAppLauncher extends XyoBase {
 
