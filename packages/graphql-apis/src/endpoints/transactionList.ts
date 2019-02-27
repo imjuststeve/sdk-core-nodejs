@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: transactionList.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Tuesday, 19th February 2019 11:52:56 am
+ * @Last modified time: Monday, 25th February 2019 1:19:29 pm
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -33,7 +33,7 @@ export default class XyoGetBlockList implements IXyoDataResolver<any, any, any, 
     const h = await this.hashProvider.createHash(Buffer.from(new Date().toISOString()))
 
     await this.transactionRepository.add(h, {
-      transactionType: 'question-answer',
+      transactionType: 'request-response',
       data: {
         question: {
           now

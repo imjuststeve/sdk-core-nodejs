@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: xyo-node.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Tuesday, 19th February 2019 2:01:07 pm
+ * @Last modified time: Monday, 25th February 2019 5:11:46 pm
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -113,6 +113,11 @@ export const DEFAULT_NODE_OPTIONS: IXyoNodeOptions = {
           address: 'need to be replaced'
         }
       }
+    },
+    contentAddressableService: {
+      host: 'ipfs.xyo.network',
+      port: 5002,
+      protocol: 'https'
     }
   }
 }
@@ -143,7 +148,9 @@ class XyoNodeLifeCycle extends BaseLifeCyclable implements IXyoProviderContainer
     [IResolvers.ARCHIVIST_NETWORK]: 'singleton',
     [IResolvers.QUESTION_SERVICE]: 'singleton',
     [IResolvers.QUESTIONS_PROVIDER]: 'singleton',
-    [IResolvers.WEB3_SERVICE]: 'singleton'
+    [IResolvers.WEB3_SERVICE]: 'singleton',
+    [IResolvers.CONTENT_ADDRESSABLE_SERVICE]: 'singleton',
+    [IResolvers.CONSENSUS_PROVIDER]: 'singleton'
   }
 
   private cachedModules: {[r: string]: any} = {}

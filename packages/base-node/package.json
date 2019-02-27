@@ -45,6 +45,8 @@
     "@xyo-network/utils": "^0.24.0",
     "@xyo-network/web3-question-service": "^0.24.0",
     "@xyo-network/web3-service": "^0.24.0",
+    "@xyo-network/ipfs-client": "^0.24.0",
+    "@xyo-network/consensus": "^0.24.0",
     "merge": "^1.2.1"
   },
   "devDependencies": {

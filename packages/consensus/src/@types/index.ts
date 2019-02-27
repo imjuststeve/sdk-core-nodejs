@@ -1,4 +1,5 @@
 import { BigNumber } from 'bignumber.js'
+import { unsubscribeFn } from "@xyo-network/utils"
 
 /**
  * Serves as the layer between the application and a blockchain
@@ -70,6 +71,15 @@ export interface IConsensusProvider {
   getLatestBlock(): Promise<IConsensusBlock | undefined>
 
   /**
+   * Returns the latest block hash. If no blocks yet exist, it
+   * returns a 32-byte representation of 0
+   *
+   * @returns {Promise<BigNumber>}
+   * @memberof IConsensusProvider
+   */
+  getLatestBlockHash(): Promise<BigNumber>
+
+  /**
    * Given a particular requestId, return the Request
    *
    * @param {BigNumber} id The request Id of interest ((which should be the hash of request itself))
@@ -77,6 +87,24 @@ export interface IConsensusProvider {
    * @memberof IConsensusProvider
    */
   getRequestById(id: BigNumber): Promise<IRequest | undefined>
+
+  /**
+   * Gets all the requests in the system that do not have a response
+   *
+   * @returns {Promise<{[id: string]: IRequest}>} A dict where keys are the id of requests, and values are the request
+   * @memberof IConsensusProvider
+   */
+  getAllRequests(): Promise<{[id: string]: IRequest}>
+
+  /**
+   * Register a callback for when a new request is added.
+   * Returns an `unsubscribeFn` that can be called to stop listening
+   *
+   * @param {(id: BigNumber, request: IRequest) => void} cb
+   * @returns {unsubscribeFn}
+   * @memberof IConsensusProvider
+   */
+  onRequestAdded(cb: (id: BigNumber, request: IRequest) => void): unsubscribeFn
 
   /**
    * Returns a paginated list of unhandled requests, given a limit and
@@ -171,7 +199,7 @@ export interface IConsensusProvider {
 
   /**
    * Given a previousBlockHash, a list of requests, a supportingDataHash, and responses,
-   * generates a signatures components.
+   * generates an abi encoded hash
    *
    * ** NOTE consider adding `account` as parameter if needed
    *
@@ -179,15 +207,27 @@ export interface IConsensusProvider {
    * @param {BigNumber[]} requests
    * @param {Buffer} supportingData
    * @param {Buffer} responses
-   * @returns {Promise<ISignatureComponents>}
+   * @returns {Promise<BigNumber>} The hash value of the ABI encoded block components
    * @memberof IConsensusProvider
    */
-  generateSignature(
+  encodeBlock(
     previousBlock: BigNumber,
     requests: BigNumber[],
     supportingData: Buffer,
     responses: Buffer
-  ): Promise<ISignatureComponents>
+  ): Promise<BigNumber>
+
+  /**
+   * Given a previousBlockHash, a list of requests, a supportingDataHash, and responses,
+   * generates a signatures components.
+   *
+   * ** NOTE consider adding `account` as parameter if needed
+   *
+   * @param {BigNumber} block The hash value of the ABI encoded block components
+   * @returns {Promise<ISignatureComponents>}
+   * @memberof IConsensusProvider
+   */
+  signBlock(block: BigNumber): Promise<ISignatureComponents>
 
   /**
    * Given a list of responses, generates a response byte-array
@@ -197,6 +237,26 @@ export interface IConsensusProvider {
    * @memberof IConsensusProvider
    */
   createResponses(responses: IResponse[]): Promise <Buffer[]>
+
+  /**
+   * Returns the percentage of the stake required to submit a new block
+   *
+   * Should return an integer value. Such that if the value is 66% this
+   * should return `66`
+   *
+   * @returns {Promise<number>}
+   * @memberof IConsensusProvider
+   */
+  getStakeQuorumPct(): Promise<number>
+
+  /**
+   * Given a public key address, returns the calculated paymentId
+   *
+   * @param {string} publicKey
+   * @returns {Promise<BigNumber>}
+   * @memberof IConsensusProvider
+   */
+  getPaymentIdFromAddress(publicKey: string): Promise<BigNumber>
 }
 
 /**
@@ -270,6 +330,7 @@ export enum IRequestType { // something like this maybe, maybe-not
  * @interface ISignatureComponents
  */
 export interface ISignatureComponents {
+  publicKey: string
   sigR: Buffer,
   sigS: Buffer,
   sigV: Buffer

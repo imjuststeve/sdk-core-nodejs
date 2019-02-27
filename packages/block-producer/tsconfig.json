@@ -24,6 +24,8 @@
   "references": [
     {"path": "../base"},
     {"path": "../errors"},
-    {"path": "../consensus"}
+    {"path": "../consensus"},
+    {"path": "../questions"},
+    {"path": "../node-network"}
   ]
 }

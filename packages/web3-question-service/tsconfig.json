@@ -22,8 +22,9 @@
   ],
   "include": ["src/**/*"],
   "references": [
-    { "path": "../web3-service"},
+    { "path": "../consensus"},
     { "path": "../questions"},
+    { "path": "../utils"},
     { "path": "../base"}
   ]
 }

@@ -4,14 +4,14 @@
  * @Email:  developer@xyfindables.com
  * @Filename: xyo-node-network.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Tuesday, 19th February 2019 6:32:19 pm
+ * @Last modified time: Tuesday, 26th February 2019 2:58:50 pm
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
 
 import { IXyoNodeNetwork, IXyoComponentFeatureResponse } from "./@types"
 import { IXyoP2PService } from "@xyo-network/p2p"
-import { unsubscribeFn, IXyoRepository } from "@xyo-network/utils"
+import { unsubscribeFn } from "@xyo-network/utils"
 import { IRequestPermissionForBlockResult } from "@xyo-network/attribution-request"
 import { XyoBase } from "@xyo-network/base"
 import { IXyoHash, IXyoHashProvider } from "@xyo-network/hashing"
@@ -23,10 +23,10 @@ import { IXyoBoundWitnessSuccessListener, IXyoBoundWitnessPayloadProvider } from
 import { XyoBlockPermissionResponseHandler } from "./handlers/xyo-block-permission-response-handler"
 import { XyoRequestPermissionForBlockHandler } from "./handlers/xyo-request-permission-for-block-handler"
 
-import { IXyoTransactionRepository, IXyoTransaction } from '@xyo-network/transaction-pool'
+import { IXyoTransaction, IXyoTransactionRepository } from '@xyo-network/transaction-pool'
 import { XyoReceivedTransactionHandler } from "./handlers/xyo-received-transaction-handler"
 
-export class XyoNodeNetwork extends XyoBase implements IXyoNodeNetwork, IXyoTransactionRepository {
+export class XyoNodeNetwork extends XyoBase implements IXyoNodeNetwork {
 
   private unsubscribeComponentFeature: unsubscribeFn | undefined
   private messageParser: XyoMessageParser
@@ -39,7 +39,7 @@ export class XyoNodeNetwork extends XyoBase implements IXyoNodeNetwork, IXyoTran
     private readonly originChainRepository: IXyoOriginChainRepository,
     private readonly payloadProvider: IXyoBoundWitnessPayloadProvider,
     private readonly boundWitnessSuccessListener: IXyoBoundWitnessSuccessListener,
-    private readonly transactionsRepository: IXyoRepository<IXyoHash, IXyoTransaction<any>>
+    private readonly transactionsRepository: IXyoTransactionRepository
   ) {
     super()
     this.messageParser = new XyoMessageParser(serializationService)
@@ -89,6 +89,37 @@ export class XyoNodeNetwork extends XyoBase implements IXyoNodeNetwork, IXyoTran
 
   public async shareTransaction(transaction: IXyoTransaction<any>): Promise<void> {
     this.p2pService.publish('transaction:share', Buffer.from(JSON.stringify(transaction)))
+  }
+
+  public requestSignaturesForBlockCandidate(
+    blockHash: string,
+    previousBlockHash: string,
+    requests: any[],
+    supportingDataHash: string,
+    responses: Buffer,
+    callback: (publicKey: string, signatureComponents: { r: Buffer; s: Buffer; v: Buffer; }) => void
+  ): unsubscribeFn {
+    this.p2pService.publish('block-witness:request', Buffer.from(JSON.stringify({
+      blockHash,
+      previousBlockHash,
+      requests,
+      supportingDataHash,
+      responses: responses.toString('hex')
+    })))
+
+    return this.p2pService.subscribe(`block-witness:request:${blockHash}`, (pk, message) => {
+      const strMsg = message.toString()
+      const msgPayload = JSON.parse(strMsg) as {
+        publicKey: string,
+        signatureComponents: {r: string, s: string, v: string}
+      }
+
+      callback(msgPayload.publicKey, {
+        r: Buffer.from(msgPayload.signatureComponents.r),
+        s: Buffer.from(msgPayload.signatureComponents.s),
+        v: Buffer.from(msgPayload.signatureComponents.v)
+      })
+    })
   }
 
   // tslint:disable-next-line:prefer-array-literal
