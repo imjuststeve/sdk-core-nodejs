@@ -26,6 +26,7 @@
     {"path": "../errors"},
     {"path": "../consensus"},
     {"path": "../questions"},
-    {"path": "../node-network"}
+    {"path": "../node-network"},
+    {"path": "../meta-list"}
   ]
 }

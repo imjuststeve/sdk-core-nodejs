@@ -16,6 +16,7 @@
     "@xyo-network/questions": "^0.24.0",
     "@xyo-network/node-network": "^0.24.0",
     "@xyo-network/utils": "^0.24.0",
+    "@xyo-network/meta-list": "^0.24.0",
     "bignumber.js": "^8.0.2"
   },
   "devDependencies": {

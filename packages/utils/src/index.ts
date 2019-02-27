@@ -245,6 +245,50 @@ export class LifeCycleBuilder {
 }
 
 // tslint:disable-next-line:max-classes-per-file
+export abstract class XyoDaemon extends XyoBase {
+
+  protected resolveStopLoopingPromise?: () => void
+
+  public start(): void {
+    this.runner(500)
+  }
+
+  public async stop(): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.resolveStopLoopingPromise = resolve
+    })
+  }
+
+  public delayRun(currentValue: number, errorOccurred: boolean): number | undefined {
+    return errorOccurred ? currentValue * 2 : 500 // exponential back-off
+  }
+
+  public abstract run(): Promise<void>
+
+  private async runner(timeout: number) {
+    let errorOccurred = false
+
+    if (this.resolveStopLoopingPromise) {
+      this.resolveStopLoopingPromise()
+      this.resolveStopLoopingPromise = undefined
+      return
+    }
+
+    try {
+      await this.run()
+    } catch (err) {
+      this.logError(`There was an error in the block-producer loop`, err)
+      errorOccurred = true
+    }
+
+    const delay = this.delayRun(timeout, errorOccurred)
+    if (delay === undefined) return
+
+    setTimeout(() => this.runner(delay), delay)
+  }
+}
+
+// tslint:disable-next-line:max-classes-per-file
 export class LifeCycleRunner {
   public state:
     undefined

@@ -32,7 +32,7 @@ export interface IConsensusProvider {
    * @returns {Promise<BigNumber>}
    * @memberof IConsensusProvider
    */
-  getPaymentIdFromAddress(publicKey: string): Promise<BigNumber>
+  getPaymentIdFromAddress(publicKey: string): Promise<BigNumber|undefined>
 
   /**
    * For a particular stakee and staker, returns the active stake
