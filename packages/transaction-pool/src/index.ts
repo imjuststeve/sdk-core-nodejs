@@ -1,6 +1,8 @@
 
 export {
-  IXyoTransaction,
   IXyoTransactionRepository,
-  IXyoTransactionType
+  IXyoTransaction,
+  IXyoTransactionType,
+  IRequestResponse,
+  IXyoRequestResponseTransaction
 } from './@types'

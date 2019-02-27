@@ -13,7 +13,10 @@
     "@xyo-network/errors": "^0.24.0",
     "@xyo-network/hashing": "^0.24.0",
     "@xyo-network/transaction-pool": "^0.24.0",
-    "@xyo-network/utils": "^0.24.0"
+    "@xyo-network/questions": "^0.24.0",
+    "@xyo-network/node-network": "^0.24.0",
+    "@xyo-network/utils": "^0.24.0",
+    "bignumber.js": "^8.0.2"
   },
   "devDependencies": {
     "@types/jest": "^23.3.1",

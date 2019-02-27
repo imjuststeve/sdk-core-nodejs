@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: index.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Thursday, 20th December 2018 12:42:27 pm
+ * @Last modified time: Wednesday, 27th February 2019 11:12:50 am
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -18,7 +18,7 @@ import { XyoBase } from '@xyo-network/base'
 export type XyoIpfsClientCtorOptions = IIpfsInitializationOptions
 
 export interface IXyoIpfsClient {
-  readFiles(address: string): Promise<Buffer[]>
+  readFile(address: string): Promise<Buffer>
 }
 
 export class XyoIpfsClient extends XyoBase implements IXyoIpfsClient {
@@ -30,15 +30,19 @@ export class XyoIpfsClient extends XyoBase implements IXyoIpfsClient {
     this.ipfs = ipfsClient(ipfsInitializationOptions)
   }
 
-  public async readFiles(address: string): Promise<Buffer[]> {
+  public async readFile(address: string): Promise<Buffer> {
     return new Promise((resolve, reject) => {
       this.ipfs.get(address, (err, files) => {
         if (err) {
           this.logError(`There was an error getting ipfs address ${address}`, err)
           return reject(err)
         }
+        if (!files || files.length !== 1) {
+          this.logError(`Bad ipfs hash ${address}`)
+          throw new Error('Bad Ipfs hash')
+        }
 
-        return resolve(files.map(f => f.content))
+        return resolve(files[0].content)
       })
     })
   }

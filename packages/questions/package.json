@@ -19,6 +19,8 @@
     "@xyo-network/origin-chain": "^0.24.0",
     "@xyo-network/peer-interaction": "^0.24.0",
     "@xyo-network/serialization": "^0.24.0",
+    "@xyo-network/transaction-pool": "^0.24.0",
+    "@xyo-network/node-network": "^0.24.0",
     "@xyo-network/signing": "^0.24.0"
   },
   "devDependencies": {

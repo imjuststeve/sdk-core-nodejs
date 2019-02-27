@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: index.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Friday, 22nd February 2019 10:12:46 am
+ * @Last modified time: Wednesday, 27th February 2019 11:14:20 am
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -30,8 +30,8 @@ import { XyoServerTcpNetwork } from '@xyo-network/network.tcp'
 import { XyoPeerInteractionRouter } from '@xyo-network/peer-interaction-router'
 import { XyoBoundWitnessTakeOriginChainServerInteraction, XyoBoundWitnessStandardServerInteraction } from '@xyo-network/peer-interaction-handlers'
 import { getSignerProvider } from '@xyo-network/signing.ecdsa'
-import { IXyoRepository, createDirectoryIfNotExists, IXyoProvider, XyoBaseInMemoryRepository } from '@xyo-network/utils'
-import { IXyoTransaction } from '@xyo-network/transaction-pool'
+import { createDirectoryIfNotExists, IXyoProvider, XyoBaseInMemoryRepository, IParameterizedProvider, base58 } from '@xyo-network/utils'
+import { IXyoTransaction, IXyoTransactionRepository } from '@xyo-network/transaction-pool'
 import { IResolvers } from './xyo-resolvers-enum'
 import { XyoLevelDbStorageProvider } from '@xyo-network/storage.leveldb'
 import { buildGraphQLServer } from '@xyo-network/graphql-apis'
@@ -41,10 +41,12 @@ import { createArchivistSqlRepository, ISqlConnectionDetails } from '@xyo-networ
 import { XyoError, XyoErrors } from '@xyo-network/errors'
 import { XyoGraphQLServer } from '@xyo-network/graphql-server'
 import { IXyoArchivistNetwork, XyoArchivistNetwork } from '@xyo-network/archivist-network'
-import { IXyoQuestionService, XyoQuestionService, IQuestionsProvider, QuestionsWorker } from '@xyo-network/questions'
+import { IXyoQuestionService, XyoQuestionService, IQuestionsProvider, QuestionsWorker, IRequestDocument } from '@xyo-network/questions'
 import { XyoBlockPermissionRequestResolver } from '@xyo-network/attribution-request.node-network'
 import { XyoWeb3Service } from '@xyo-network/web3-service'
 import { Web3QuestionService } from '@xyo-network/web3-question-service'
+import { XyoIpfsClient, XyoIpfsClientCtorOptions } from '@xyo-network/ipfs-client'
+import { XyoScscConsensusProvider, IConsensusProvider } from '@xyo-network/consensus'
 
 const graphql: IXyoProvider<XyoGraphQLServer, IXyoGraphQLConfig> = {
   async get(container, config) {
@@ -79,7 +81,18 @@ const nodeRunnerDelegates: IXyoProvider<IXyoNodeRunnerDelegate[], any> = {
     if (config.enableQuestionsWorker) {
       const questionsProv = await container.get<IQuestionsProvider>(IResolvers.QUESTIONS_PROVIDER)
       const questions = await container.get<IXyoQuestionService>(IResolvers.QUESTION_SERVICE)
-      const qWorker = new QuestionsWorker(questionsProv, questions)
+      const transactionRepo = await container.get<IXyoTransactionRepository>(IResolvers.TRANSACTION_REPOSITORY)
+      const nodes = await container.get<IXyoNodeNetwork>(IResolvers.NODE_NETWORK)
+      const hasher = await container.get<IXyoHashProvider>(IResolvers.HASH_PROVIDER)
+
+      const qWorker = new QuestionsWorker(
+        questionsProv,
+        questions,
+        transactionRepo,
+        nodes,
+        hasher
+      )
+
       delegates.push(qWorker)
     }
 
@@ -96,7 +109,7 @@ const nodeNetwork: IXyoProvider<IXyoNodeNetwork, IXyoNodeNetworkConfig> = {
     const originBlockRepo = await container.get<IXyoOriginBlockRepository>(IResolvers.ORIGIN_BLOCK_REPOSITORY)
     const payloadProvider = await container.get<IXyoBoundWitnessPayloadProvider>(IResolvers.BOUND_WITNESS_PAYLOAD_PROVIDER)
     const boundWitnessSuccess = await container.get<IXyoBoundWitnessSuccessListener>(IResolvers.BOUND_WITNESS_SUCCESS_LISTENER)
-    const transactionRepository = await container.get<IXyoRepository<IXyoHash, IXyoTransaction<any>>>(IResolvers.TRANSACTION_REPOSITORY)
+    const transactionRepository = await container.get<IXyoTransactionRepository>(IResolvers.TRANSACTION_REPOSITORY)
 
     const networkService = new XyoNodeNetwork(
       p2p,
@@ -312,7 +325,7 @@ const signersProvider: IXyoProvider<IXyoSigner[], undefined> = {
   }
 }
 
-const transactionsRepository: IXyoProvider<IXyoRepository<IXyoHash, IXyoTransaction<any>>, undefined> = {
+const transactionsRepository: IXyoProvider<IXyoTransactionRepository, undefined> = {
   async get() {
     return new XyoBaseInMemoryRepository<IXyoHash, IXyoTransaction<any>>(k => k.serializeHex())
   }
@@ -390,10 +403,35 @@ const web3Service: IXyoProvider<XyoWeb3Service, IXyoWeb3ServiceConfig> = {
   }
 }
 
-const questionsProvider: IXyoProvider<IQuestionsProvider, undefined> = {
+const consensusProvider: IXyoProvider<IConsensusProvider, undefined> = {
   async get(container, config) {
     const web3 = await container.get<XyoWeb3Service>(IResolvers.WEB3_SERVICE)
-    return new Web3QuestionService(web3)
+    return new XyoScscConsensusProvider(web3)
+  }
+}
+
+const questionsProvider: IXyoProvider<IQuestionsProvider, undefined> = {
+  async get(container, config) {
+    const consensus = await container.get<IConsensusProvider>(IResolvers.CONSENSUS_PROVIDER)
+    const contentService = await container.get<IParameterizedProvider<string, IRequestDocument<any> | undefined>>(
+      IResolvers.CONTENT_ADDRESSABLE_SERVICE
+    )
+    return new Web3QuestionService(consensus, contentService)
+  }
+}
+
+const contentAddressableService: IXyoProvider<IParameterizedProvider<string, IRequestDocument<any> | undefined>, XyoIpfsClientCtorOptions> = {
+  async get(container, config) {
+    const client = new XyoIpfsClient(config)
+    return {
+      async get(key: string) {
+        const hexBuff = Buffer.from(key, 'hex')
+
+        const ipfsAddr = `Qm${base58.encode(hexBuff)}`
+        const rawData = await client.readFile(ipfsAddr)
+        return JSON.parse(rawData.toString()) as IRequestDocument<any>
+      }
+    }
   }
 }
 
@@ -421,5 +459,7 @@ export const resolvers: IXyoResolvers = {
   [IResolvers.GRAPHQL]: graphql,
   [IResolvers.QUESTION_SERVICE]: questionService,
   [IResolvers.WEB3_SERVICE]: web3Service,
-  [IResolvers.QUESTIONS_PROVIDER]: questionsProvider
+  [IResolvers.QUESTIONS_PROVIDER]: questionsProvider,
+  [IResolvers.CONSENSUS_PROVIDER]: consensusProvider,
+  [IResolvers.CONTENT_ADDRESSABLE_SERVICE]: contentAddressableService
 }

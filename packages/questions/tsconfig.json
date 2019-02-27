@@ -34,6 +34,8 @@
     {"path": "../serialization"},
     {"path": "../attribution-request"},
     {"path": "../peer-interaction"},
+    {"path": "../transaction-pool"},
+    {"path": "../node-network"},
     {"path": "../signing"}
   ]
 }

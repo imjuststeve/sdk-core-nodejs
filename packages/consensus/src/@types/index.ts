@@ -26,6 +26,15 @@ export interface IConsensusProvider {
   getActiveStake(paymentId: BigNumber): Promise<BigNumber>
 
   /**
+   * Given a public key address, returns the calculated paymentId
+   *
+   * @param {string} publicKey
+   * @returns {Promise<BigNumber>}
+   * @memberof IConsensusProvider
+   */
+  getPaymentIdFromAddress(publicKey: string): Promise<BigNumber>
+
+  /**
    * For a particular stakee and staker, returns the active stake
    *
    * @param {BigNumber} paymentId The stakee id
@@ -36,13 +45,13 @@ export interface IConsensusProvider {
   getStakerActiveStake(paymentId: BigNumber, stakerAddr: string): Promise<BigNumber>
 
   /**
-   * Returns a list of staker address for a particular stakee
+   * Returns a list of stake objects a particular stakee
    *
    * @param {BigNumber} paymentId The stakeeId
-   * @returns {Promise<string[]>} The list of addresses that are staking the stakee
+   * @returns {Promise<string[]>} The list of stake datas
    * @memberof IConsensusProvider
    */
-  getStakersForStakee(paymentId: BigNumber): Promise<string[]>
+  getStakesForStakee(paymentId: BigNumber): Promise<IStake[]>
 
   /**
    * Given a stakeeId, will return true if the stakee is a block-producer, false otherwise
@@ -62,12 +71,13 @@ export interface IConsensusProvider {
   getRewardPercentages(): Promise<IRewardComponents>
 
   /**
-   * Returns the most recent block in the blockchain, undefined it there is not yet a block
+   * Returns the latest block hash. If no blocks yet exist, it
+   * returns a 32-byte representation of 0
    *
-   * @returns {(Promise<IConsensusBlock | undefined>)}
+   * @returns {Promise<BigNumber>}
    * @memberof IConsensusProvider
    */
-  getLatestBlock(): Promise<IConsensusBlock | undefined>
+  getLatestBlockHash(): Promise<BigNumber>
 
   /**
    * Given a particular requestId, return the Request
@@ -79,15 +89,12 @@ export interface IConsensusProvider {
   getRequestById(id: BigNumber): Promise<IRequest | undefined>
 
   /**
-   * Returns a paginated list of unhandled requests, given a limit and
-   * an optional cursor
+   * Gets a page of recent requests in the system that do not have a response
    *
-   * @param {number} limit The max the number of results to return
-   * @param {BigNumber} cursor An optional cursor value to offset the pagination
-   * @returns {Promise<IRequest[]>}
+   * @returns {Promise<{[id: string]: IRequest}>} A dict where keys are the id of requests, and values are the request
    * @memberof IConsensusProvider
    */
-  getUnhandledRequests(limit: number, cursor?: BigNumber): Promise<IRequest[]>
+  getAllRequests(): Promise<{[id: string]: IRequest}>
 
   /**
    * Given a particular requestId, returns the current gas estimate
@@ -171,7 +178,7 @@ export interface IConsensusProvider {
 
   /**
    * Given a previousBlockHash, a list of requests, a supportingDataHash, and responses,
-   * generates a signatures components.
+   * generates an abi encoded hash
    *
    * ** NOTE consider adding `account` as parameter if needed
    *
@@ -179,15 +186,27 @@ export interface IConsensusProvider {
    * @param {BigNumber[]} requests
    * @param {Buffer} supportingData
    * @param {Buffer} responses
-   * @returns {Promise<ISignatureComponents>}
+   * @returns {Promise<BigNumber>} The hash value of the ABI encoded block components
    * @memberof IConsensusProvider
    */
-  generateSignature(
+  encodeBlock(
     previousBlock: BigNumber,
     requests: BigNumber[],
     supportingData: Buffer,
     responses: Buffer
-  ): Promise<ISignatureComponents>
+  ): Promise<BigNumber>
+
+  /**
+   * Given a previousBlockHash, a list of requests, a supportingDataHash, and responses,
+   * generates a signatures components.
+   *
+   * ** NOTE consider adding `account` as parameter if needed
+   *
+   * @param {BigNumber} block The hash value of the ABI encoded block components
+   * @returns {Promise<ISignatureComponents>}
+   * @memberof IConsensusProvider
+   */
+  signBlock(block: BigNumber): Promise<ISignatureComponents>
 
   /**
    * Given a list of responses, generates a response byte-array
@@ -197,6 +216,32 @@ export interface IConsensusProvider {
    * @memberof IConsensusProvider
    */
   createResponses(responses: IResponse[]): Promise <Buffer[]>
+
+  /**
+   * Returns the percentage of the stake required to submit a new block
+   *
+   * Should return an integer value. Such that if the value is 66% this
+   * should return `66`
+   *
+   * @returns {Promise<number>}
+   * @memberof IConsensusProvider
+   */
+  getStakeQuorumPct(): Promise<number>
+}
+
+/**
+ * The stake data object
+ *
+ * @export
+ * @interface IStake
+ */
+export interface IStake {
+  amount: BigNumber
+  stakeBlock: BigNumber
+  unstakeBlock: BigNumber
+  stakee: BigNumber
+  staker: string
+  isActivated: boolean
 }
 
 /**
@@ -230,10 +275,10 @@ export interface IConsensusBlock {
  * @interface IRequest
  */
 export interface IRequest {
-  xyoBounty: number
-  weiMining: number
+  xyoBounty: BigNumber
+  weiMining: BigNumber
   miningProvider: number
-  createdAt: number // Block Height in ethereum blocks
+  createdAt: BigNumber // Block Height in ethereum blocks
   requestSender: string
   requestType: IRequestType // 1-byte number
   hasResponse: boolean
@@ -270,6 +315,7 @@ export enum IRequestType { // something like this maybe, maybe-not
  * @interface ISignatureComponents
  */
 export interface ISignatureComponents {
+  publicKey: string
   sigR: Buffer,
   sigS: Buffer,
   sigV: Buffer

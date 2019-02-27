@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: resolvers-enum
  * @Last modified by: ryanxyo
- * @Last modified time: Thursday, 14th February 2019 4:22:54 pm
+ * @Last modified time: Monday, 25th February 2019 5:04:17 pm
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -33,5 +33,7 @@ export enum IResolvers {
   QUESTIONS_PROVIDER = 'questionsProvider',
   ABOUT_ME_SERVICE = 'aboutMeService',
   GRAPHQL = 'graphql',
-  WEB3_SERVICE = 'web3Service'
+  WEB3_SERVICE = 'web3Service',
+  CONTENT_ADDRESSABLE_SERVICE = "contentAddressableService",
+  CONSENSUS_PROVIDER = "consensusProvider"
 }

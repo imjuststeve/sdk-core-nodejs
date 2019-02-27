@@ -24,6 +24,9 @@ export {
 
 export { ProcessManager } from './process-manager'
 
+/// <reference path="./@types/bs58.d.ts" />
+import bs58 from 'bs58'
+
 import { promisify } from "util"
 import fs from 'fs'
 import { ILifeCyclable, ILifeCycleEvent, asyncPureFn, IXyoRepository, parameterizedFactoryFn } from './@types'
@@ -315,6 +318,11 @@ export class LifeCycleRunner {
   public canStop() {
     return this.state === 'post:started'
   }
+}
+
+export const base58 = {
+  encode: (b: Buffer) => bs58.encode(b),
+  decode: (hex: string) => bs58.decode(hex)
 }
 
 export async function fileExists(pathToFile: string): Promise<boolean> {

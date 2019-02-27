@@ -8,3 +8,24 @@
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
+// import { BigNumber } from 'bignumber.js'
+import { Contract } from 'web3-eth-contract'
+
+export interface IContractData {
+  address: string
+  ipfsHash: string
+  name?: string
+  contract?: Contract
+}
+
+export interface IContractAbi {
+  methods: any
+}
+
+export interface IConsensusContract {
+  methods: any
+}
+
+export interface IStakableTokenContract {
+  methods: any
+}

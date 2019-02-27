@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: index.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Tuesday, 19th February 2019 10:17:21 am
+ * @Last modified time: Tuesday, 26th February 2019 2:35:18 pm
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -12,6 +12,7 @@
 import { unsubscribeFn } from '@xyo-network/utils'
 import { IRequestPermissionForBlockResult } from '@xyo-network/attribution-request'
 import { IXyoHash } from '@xyo-network/hashing'
+import { IXyoTransaction } from '@xyo-network/transaction-pool'
 
 export interface IXyoNodeNetwork {
 
@@ -38,6 +39,18 @@ export interface IXyoNodeNetwork {
   ): unsubscribeFn
 
   serviceBlockPermissionRequests(): unsubscribeFn
+
+  shareTransaction(transaction: IXyoTransaction<any>): Promise<void>
+  listenForTransactions(): unsubscribeFn
+
+  requestSignaturesForBlockCandidate(
+    blockHash: string,
+    previousBlockHash: string,
+    requests: any[],
+    supportingDataHash: string,
+    responses: Buffer,
+    callback: (publicKey: string, signatureComponents: { r: Buffer, s: Buffer, v: Buffer}) => void
+  ): unsubscribeFn
 }
 
 export interface IXyoComponentArchivistFeatureDetail {
