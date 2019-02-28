@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: xyo-block-producer.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Thursday, 28th February 2019 12:09:33 pm
+ * @Last modified time: Thursday, 28th February 2019 3:41:53 pm
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -19,6 +19,7 @@ import { IConsensusProvider, ISignatureComponents } from '@xyo-network/consensus
 import { BigNumber } from 'bignumber.js'
 import { IXyoIntersectionTransaction } from '@xyo-network/questions'
 import { IXyoNodeNetwork } from '@xyo-network/node-network'
+import { IBlockWitnessRequestDTO } from '../node-network/dist/@types'
 
 const MAX_TRANSACTIONS = 10
 const MIN_TRANSACTIONS = 1
@@ -67,7 +68,13 @@ export class XyoBlockProducer extends XyoDaemon {
       return
     }
 
-    const latestBlockHash = await this.consensusProvider.getLatestBlockHash()
+    const [latestBlockHash, currentBlockHeight, trustThreshold] = await Promise.all([
+      await this.consensusProvider.getLatestBlockHash(),
+      await this.consensusProvider.getBlockHeight(),
+      await this.consensusProvider.getBlockConfirmationTrustThreshold()
+    ])
+
+    const stakeConsensusBlockHeight = currentBlockHeight.minus(trustThreshold)
 
     const candidate = list.items.reduce((memo, transaction) => {
       if (transaction.transactionType !== 'request-response') {
@@ -95,6 +102,7 @@ export class XyoBlockProducer extends XyoDaemon {
 
     const blockHash = await this.consensusProvider.encodeBlock(
       latestBlockHash,
+      stakeConsensusBlockHeight,
       candidate.requests,
       supportingDataHash.getHash(),
       candidate.responses
@@ -134,6 +142,7 @@ export class XyoBlockProducer extends XyoDaemon {
       await this.submitBlock(
         sigAccumulator,
         mySig,
+        stakeConsensusBlockHeight,
         latestBlockHash,
         supportingDataHash.getHash(),
         candidate.requests,
@@ -143,12 +152,17 @@ export class XyoBlockProducer extends XyoDaemon {
     }
 
     return new Promise(async (resolve, reject) => {
+      const dto: IBlockWitnessRequestDTO = {
+        blockHash: blockHash.toString(16),
+        previousBlockHash: latestBlockHash.toString(16),
+        supportingDataHash: supportingDataHash.getHash().toString('hex'),
+        requests: candidate.requests.map(r => r.toString(16)),
+        responses: candidate.responses.toString('hex'),
+        agreedStakeBlockHeight: stakeConsensusBlockHeight.toString(16)
+      }
+
       let unsubscribe: unsubscribeFn | undefined = this.nodeNetwork.requestSignaturesForBlockCandidate(
-        blockHash.toString(16),
-        latestBlockHash.toString(16),
-        candidate.requests,
-        supportingDataHash.getHash().toString('hex'),
-        candidate.responses,
+        dto,
         this.onSignatureRequest(
           target,
           (v: BigNumber) => {
@@ -174,6 +188,7 @@ export class XyoBlockProducer extends XyoDaemon {
             this.submitBlock(
               sigAccumulator,
               mySig,
+              stakeConsensusBlockHeight,
               latestBlockHash,
               supportingDataHash.getHash(),
               candidate.requests,
@@ -230,6 +245,7 @@ export class XyoBlockProducer extends XyoDaemon {
   private async submitBlock(
     sigAccumulator: { pk: BigNumber, r: Buffer, s: Buffer, v: Buffer}[], // tslint:disable-line:array-type
     mySig: ISignatureComponents,
+    stakeConsensusBlockHeight: BigNumber,
     latestBlockHash: BigNumber,
     supportingDataHash: Buffer,
     requests: BigNumber[],
@@ -247,6 +263,7 @@ export class XyoBlockProducer extends XyoDaemon {
 
     return this.consensusProvider.submitBlock(
       mySig.publicKey,
+      stakeConsensusBlockHeight,
       latestBlockHash,
       requests,
       supportingDataHash,

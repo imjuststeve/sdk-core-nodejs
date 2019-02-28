@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: xyo-witness-requester-handler.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Thursday, 28th February 2019 11:55:15 am
+ * @Last modified time: Thursday, 28th February 2019 3:29:41 pm
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -40,6 +40,7 @@ export class XyoWitnessRequestHandler extends XyoBaseHandler {
     if (!json) return
     const block: IBlockWitnessRequest = {
       blockHash: new BigNumber(`0x${json.blockHash}`),
+      agreedStakeBlockHeight: new BigNumber(`0x${json.agreedStakeBlockHeight}`),
       previousBlockHash: new BigNumber(`0x${json.previousBlockHash}`),
       supportingDataHash: Buffer.from(json.supportingDataHash, 'hex'),
       requests: json.requests.map(r => new BigNumber(`0x${r}`)),
@@ -49,6 +50,7 @@ export class XyoWitnessRequestHandler extends XyoBaseHandler {
     try {
       await this.validateBlock(block)
       const encodedBlock = await this.consensusProvider.encodeBlock(
+        block.agreedStakeBlockHeight,
         block.previousBlockHash,
         block.requests,
         block.supportingDataHash,

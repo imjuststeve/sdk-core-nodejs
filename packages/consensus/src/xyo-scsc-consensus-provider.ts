@@ -15,14 +15,28 @@ import { XyoWeb3Service } from '@xyo-network/web3-service'
 
 export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvider {
 
+  private static CONFIRMATION_THRESHOLD = 24
+
   private web3Service: XyoWeb3Service
 
   constructor(private readonly web3: XyoWeb3Service) {
     super()
     this.web3Service = web3
   }
+
+  public async getBlockHeight(): Promise<BigNumber> {
+    const web3 = await this.web3Service.getOrInitializeWeb3()
+    const blockNumber = await web3.eth.getBlockNumber()
+    return new BigNumber(blockNumber)
+  }
+
+  public async getBlockConfirmationTrustThreshold(): Promise<number> {
+    return XyoScscConsensusProvider.CONFIRMATION_THRESHOLD
+  }
+
   public async encodeBlock(
     previousBlock: BigNumber,
+    agreedStakeBlockHeight: BigNumber,
     requests: BigNumber[],
     supportingData: Buffer,
     responses: Buffer
@@ -161,6 +175,7 @@ export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvi
 
   public submitBlock(
     blockProducer: string,
+    agreedStakeBlockHeight: BigNumber,
     previousBlock: BigNumber,
     requests: BigNumber[],
     supportingData: Buffer,

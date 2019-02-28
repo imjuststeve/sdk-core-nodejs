@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: xyo-block-producer.spec.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Wednesday, 27th February 2019 4:34:07 pm
+ * @Last modified time: Thursday, 28th February 2019 3:42:55 pm
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -34,6 +34,7 @@ describe('BlockProducer', () => {
       },
       onSubmitBlock: (
         blockProducer: string,
+        agreedStakeBlockHeight: BigNumber,
         previousBlock: BigNumber,
         requests: BigNumber[],
         supportingData: Buffer, // hash
@@ -99,6 +100,7 @@ describe('BlockProducer', () => {
       },
       onSubmitBlock: (
         blockProducer: string,
+        agreedStakeBlockHeight: BigNumber,
         previousBlock: BigNumber,
         requests: BigNumber[],
         supportingData: Buffer, // hash
@@ -174,6 +176,7 @@ describe('BlockProducer', () => {
       },
       onSubmitBlock: (
         blockProducer: string,
+        agreedStakeBlockHeight: BigNumber,
         previousBlock: BigNumber,
         requests: BigNumber[],
         supportingData: Buffer, // hash
@@ -257,6 +260,7 @@ async function getConsensusProvider(options: {
   activeStakeByPaymentId?: {[s: string]: BigNumber},
   onSubmitBlock?: (
     blockProducer: string,
+    agreedStakeBlockHeight: BigNumber,
     previousBlock: BigNumber,
     requests: BigNumber[],
     supportingData: Buffer, // hash
@@ -309,6 +313,7 @@ async function getConsensusProvider(options: {
     },
     submitBlock: async (
       blockProducer: string,
+      agreedStakeBlockHeight: BigNumber,
       previousBlock: BigNumber,
       requests: BigNumber[],
       supportingData: Buffer, // hash
@@ -321,6 +326,7 @@ async function getConsensusProvider(options: {
       if (options.onSubmitBlock) {
         const res = options.onSubmitBlock(
           blockProducer,
+          agreedStakeBlockHeight,
           previousBlock,
           requests,
           supportingData,
@@ -366,7 +372,7 @@ async function getNodeNetwork(options?: {
 
   // @ts-ignore
   const nodeNetwork: IXyoNodeNetwork = {
-    requestSignaturesForBlockCandidate: (a, b, c, d, e, cb) => {
+    requestSignaturesForBlockCandidate: (dto, cb) => {
       // tslint:disable-next-line:prefer-array-literal
       const cbs: Array<{publicKey: string, r: Buffer, s: Buffer, v: Buffer}> =
         (options && options.callbackParams) || []

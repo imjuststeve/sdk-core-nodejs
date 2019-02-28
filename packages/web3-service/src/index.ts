@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: index.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Wednesday, 27th February 2019 11:13:15 am
+ * @Last modified time: Thursday, 28th February 2019 3:11:21 pm
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -27,6 +27,7 @@ import { Contract } from 'web3-eth-contract'
 export class XyoWeb3Service extends XyoBase {
   private web3: Web3 | undefined
   private ipfs: XyoIpfsClient
+
   constructor (
     private readonly web3ProviderArgs: any,
     public readonly currentUser: string,
@@ -71,15 +72,7 @@ export class XyoWeb3Service extends XyoBase {
     return contract.address
   }
 
-  public async getOrInitializeSC(name: string): Promise<any> {
-    if (this.existingContracts[name].contract) {
-      return this.existingContracts[name].contract
-    }
-    this.existingContracts[name].contract = await this.getContractByName(name)
-    return this.existingContracts[name].contract
-  }
-
-  private async getOrInitializeWeb3(): Promise<Web3> {
+  public async getOrInitializeWeb3(): Promise<Web3> {
     if (this.web3) {
       return this.web3
     }
@@ -96,4 +89,13 @@ export class XyoWeb3Service extends XyoBase {
     this.web3 = new Web3(httpProvider)
     return this.web3
   }
+
+  public async getOrInitializeSC(name: string): Promise<any> {
+    if (this.existingContracts[name].contract) {
+      return this.existingContracts[name].contract
+    }
+    this.existingContracts[name].contract = await this.getContractByName(name)
+    return this.existingContracts[name].contract
+  }
+
 }

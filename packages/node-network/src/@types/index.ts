@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: index.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Thursday, 28th February 2019 11:56:41 am
+ * @Last modified time: Thursday, 28th February 2019 3:36:03 pm
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -46,11 +46,7 @@ export interface IXyoNodeNetwork {
   listenForTransactions(): unsubscribeFn
 
   requestSignaturesForBlockCandidate(
-    blockHash: string,
-    previousBlockHash: string,
-    requests: BigNumber[],
-    supportingDataHash: string,
-    responses: Buffer,
+    candidate: IBlockWitnessRequestDTO,
     callback: (publicKey: string, signatureComponents: { r: Buffer, s: Buffer, v: Buffer}) => void
   ): unsubscribeFn
 
@@ -81,6 +77,7 @@ export interface IXyoComponentFeatureDetail<T extends {}> {
 
 export interface IBlockWitnessRequestDTO {
   blockHash: string
+  agreedStakeBlockHeight: string
   previousBlockHash: string
   supportingDataHash: string
   requests: string[],
@@ -89,6 +86,7 @@ export interface IBlockWitnessRequestDTO {
 
 export interface IBlockWitnessRequest {
   blockHash: BigNumber
+  agreedStakeBlockHeight: BigNumber,
   previousBlockHash: BigNumber
   supportingDataHash: Buffer
   requests: BigNumber[],
