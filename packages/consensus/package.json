@@ -7,7 +7,7 @@
   "author": "Ryan",
   "license": "MIT",
   "dependencies": {
-    "bignumber.js": "^8.0.2",
+    "bignumber.js": "^8.1.1",
     "@xyo-network/base": "^0.24.0",
     "@xyo-network/web3-service": "^0.24.0",
     "@xyo-network/utils": "^0.24.0"

@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: xyo-node-network.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Tuesday, 26th February 2019 2:58:50 pm
+ * @Last modified time: Thursday, 28th February 2019 11:55:07 am
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -25,6 +25,9 @@ import { XyoRequestPermissionForBlockHandler } from "./handlers/xyo-request-perm
 
 import { IXyoTransaction, IXyoTransactionRepository } from '@xyo-network/transaction-pool'
 import { XyoReceivedTransactionHandler } from "./handlers/xyo-received-transaction-handler"
+import BigNumber from "bignumber.js"
+import { XyoWitnessRequestHandler } from "./handlers/xyo-witness-requester-handler"
+import { IConsensusProvider } from "@xyo-network/consensus"
 
 export class XyoNodeNetwork extends XyoBase implements IXyoNodeNetwork {
 
@@ -94,7 +97,7 @@ export class XyoNodeNetwork extends XyoBase implements IXyoNodeNetwork {
   public requestSignaturesForBlockCandidate(
     blockHash: string,
     previousBlockHash: string,
-    requests: any[],
+    requests: BigNumber[],
     supportingDataHash: string,
     responses: Buffer,
     callback: (publicKey: string, signatureComponents: { r: Buffer; s: Buffer; v: Buffer; }) => void
@@ -102,8 +105,8 @@ export class XyoNodeNetwork extends XyoBase implements IXyoNodeNetwork {
     this.p2pService.publish('block-witness:request', Buffer.from(JSON.stringify({
       blockHash,
       previousBlockHash,
-      requests,
       supportingDataHash,
+      requests: requests.map(r => r.toString(16)),
       responses: responses.toString('hex')
     })))
 
@@ -115,11 +118,22 @@ export class XyoNodeNetwork extends XyoBase implements IXyoNodeNetwork {
       }
 
       callback(msgPayload.publicKey, {
-        r: Buffer.from(msgPayload.signatureComponents.r),
-        s: Buffer.from(msgPayload.signatureComponents.s),
-        v: Buffer.from(msgPayload.signatureComponents.v)
+        r: Buffer.from(msgPayload.signatureComponents.r, 'hex'),
+        s: Buffer.from(msgPayload.signatureComponents.s, 'hex'),
+        v: Buffer.from(msgPayload.signatureComponents.v, 'hex')
       })
     })
+  }
+
+  public listenForBlockWitnessRequests(consensusProvider: IConsensusProvider): unsubscribeFn {
+    const handler = new XyoWitnessRequestHandler(
+      this.serializationService,
+      this.p2pService,
+      consensusProvider
+    )
+
+    handler.initialize()
+    return handler.unsubscribeAll.bind(handler)
   }
 
   // tslint:disable-next-line:prefer-array-literal

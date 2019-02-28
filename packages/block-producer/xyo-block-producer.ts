@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: xyo-block-producer.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Wednesday, 27th February 2019 4:26:29 pm
+ * @Last modified time: Thursday, 28th February 2019 12:09:33 pm
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -69,7 +69,7 @@ export class XyoBlockProducer extends XyoDaemon {
 
     const latestBlockHash = await this.consensusProvider.getLatestBlockHash()
 
-    const candidate = list.items.reduce((memo: any, transaction) => {
+    const candidate = list.items.reduce((memo, transaction) => {
       if (transaction.transactionType !== 'request-response') {
         throw new XyoError(`TODO handle different event types`, XyoErrors.CRITICAL)
       }
@@ -185,23 +185,21 @@ export class XyoBlockProducer extends XyoDaemon {
         )
       )
 
-      let tries = 0
-      const intervalId = setInterval(async () => {
+      const cancelLoop = async (tries: number) => {
         this.logInfo(`Still working on producing block after ${1000 * tries} seconds`)
         if (unsubscribe === undefined) {
-          clearInterval(intervalId)
+          clearInterval(timeoutId)
           resolve()
           return
         }
 
-        if (this.resolveStopLoopingPromise) {
+        if (this.shouldStop()) {
           unsubscribe()
-          clearInterval(intervalId)
+          clearInterval(timeoutId)
           resolve()
           return
         }
 
-        tries += 1
         const [stillCanSubmit, currentLatestBlockHash] = await Promise.all([
           this.consensusProvider.canSubmitBlock(this.accountAddress),
           this.consensusProvider.getLatestBlockHash()
@@ -217,14 +215,16 @@ export class XyoBlockProducer extends XyoDaemon {
             unsubscribe = undefined
           }
 
-          clearInterval(intervalId)
+          clearInterval(timeoutId)
           resolve()
           return
         }
 
-      }, 1000)
-    })
+        timeoutId = setTimeout(() => cancelLoop(tries + 1), 1000)
+      }
 
+      let timeoutId = setTimeout(() => cancelLoop(1), 1000)
+    })
   }
 
   private async submitBlock(

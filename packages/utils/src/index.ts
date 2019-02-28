@@ -247,7 +247,7 @@ export class LifeCycleBuilder {
 // tslint:disable-next-line:max-classes-per-file
 export abstract class XyoDaemon extends XyoBase {
 
-  protected resolveStopLoopingPromise?: () => void
+  private resolveStopLoopingPromise?: () => void
 
   public start(): void {
     this.runner(500)
@@ -259,23 +259,32 @@ export abstract class XyoDaemon extends XyoBase {
     })
   }
 
-  public delayRun(currentValue: number, errorOccurred: boolean): number | undefined {
+  public abstract run(): Promise<void> | void
+
+  protected delayRun(currentValue: number, errorOccurred: boolean): number | undefined {
     return errorOccurred ? currentValue * 2 : 500 // exponential back-off
   }
 
-  public abstract run(): Promise<void>
+  protected shouldStop(): boolean {
+    return this.resolveStopLoopingPromise !== undefined
+  }
 
   private async runner(timeout: number) {
     let errorOccurred = false
 
-    if (this.resolveStopLoopingPromise) {
-      this.resolveStopLoopingPromise()
-      this.resolveStopLoopingPromise = undefined
+    if (this.shouldStop()) {
+      if (this.resolveStopLoopingPromise) {
+        this.resolveStopLoopingPromise()
+        this.resolveStopLoopingPromise = undefined
+      }
+
       return
     }
 
     try {
-      await this.run()
+      const runReq = this.run()
+      if (runReq === undefined) return
+      await runReq
     } catch (err) {
       this.logError(`There was an error in the block-producer loop`, err)
       errorOccurred = true

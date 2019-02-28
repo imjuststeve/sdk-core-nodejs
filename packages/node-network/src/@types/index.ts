@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: index.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Tuesday, 26th February 2019 2:35:18 pm
+ * @Last modified time: Thursday, 28th February 2019 11:56:41 am
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -13,6 +13,8 @@ import { unsubscribeFn } from '@xyo-network/utils'
 import { IRequestPermissionForBlockResult } from '@xyo-network/attribution-request'
 import { IXyoHash } from '@xyo-network/hashing'
 import { IXyoTransaction } from '@xyo-network/transaction-pool'
+import { BigNumber } from 'bignumber.js'
+import { IConsensusProvider } from '@xyo-network/consensus'
 
 export interface IXyoNodeNetwork {
 
@@ -46,11 +48,13 @@ export interface IXyoNodeNetwork {
   requestSignaturesForBlockCandidate(
     blockHash: string,
     previousBlockHash: string,
-    requests: any[],
+    requests: BigNumber[],
     supportingDataHash: string,
     responses: Buffer,
     callback: (publicKey: string, signatureComponents: { r: Buffer, s: Buffer, v: Buffer}) => void
   ): unsubscribeFn
+
+  listenForBlockWitnessRequests(consensusProvider: IConsensusProvider): unsubscribeFn
 }
 
 export interface IXyoComponentArchivistFeatureDetail {
@@ -73,4 +77,20 @@ export interface IXyoComponentFeatureDetail<T extends {}> {
   featureType: string
   supportsFeature: boolean,
   featureOptions: T
+}
+
+export interface IBlockWitnessRequestDTO {
+  blockHash: string
+  previousBlockHash: string
+  supportingDataHash: string
+  requests: string[],
+  responses: string
+}
+
+export interface IBlockWitnessRequest {
+  blockHash: BigNumber
+  previousBlockHash: BigNumber
+  supportingDataHash: Buffer
+  requests: BigNumber[],
+  responses: Buffer
 }

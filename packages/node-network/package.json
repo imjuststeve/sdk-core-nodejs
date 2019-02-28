@@ -20,7 +20,9 @@
     "@xyo-network/serialization-schema": "^0.24.0",
     "@xyo-network/signing": "^0.24.0",
     "@xyo-network/transaction-pool": "^0.24.0",
-    "@xyo-network/utils": "^0.24.0"
+    "@xyo-network/utils": "^0.24.0",
+    "@xyo-network/consensus": "^0.24.0",
+    "bignumber.js": "^8.1.1"
   },
   "devDependencies": {
     "@types/jest": "^23.3.1",
