@@ -8,10 +8,11 @@
  * @Copyright: Copyright XY | The Findables Company
  */
 
-import { IConsensusProvider, IStake, IRequest, ISignatureComponents, IResponse, IRewardComponents } from './@types'
+import { IConsensusProvider, IStake, IRequest, ISignatureComponents, IResponse, IRewardComponents, IRequestType } from './@types'
 import { BigNumber } from 'bignumber.js'
 import { XyoBase } from '@xyo-network/base'
 import { XyoWeb3Service } from '@xyo-network/web3-service'
+import { soliditySHA3, solidityPack } from 'ethereumjs-abi'
 
 export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvider {
 
@@ -20,22 +21,6 @@ export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvi
   constructor(private readonly web3: XyoWeb3Service) {
     super()
     this.web3Service = web3
-  }
-  public async encodeBlock(
-    previousBlock: BigNumber,
-    requests: BigNumber[],
-    supportingData: Buffer,
-    responses: Buffer
-  ): Promise<BigNumber> {
-    throw new Error("Method not implemented.")
-  }
-
-  public async signBlock(block: BigNumber): Promise<ISignatureComponents> {
-    throw new Error("Method not implemented.")
-  }
-
-  public async getStakeQuorumPct(): Promise<number> {
-    throw new Error("Method not implemented.")
   }
 
   public async getRequestById(id: BigNumber): Promise<IRequest | undefined> {
@@ -47,12 +32,12 @@ export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvi
     return req
   }
 
-  public async getAllRequests(): Promise<{ [id: string]: IRequest }> {
+  public async getNextUnhandledRequests(): Promise<{ [id: string]: IRequest }> {
     const resultMapping: { [id: string]: IRequest } = {}
     const consensus = await this.web3Service.getOrInitializeSC("XyStakingConsensus")
     const numRequests = await consensus.methods.numRequests().call()
     const start = numRequests > 0 ? numRequests - 1 : 0
-    return this.getNextBatchRequests(resultMapping, start)
+    return this.getUnhandledRequestsBatch(resultMapping, start)
   }
 
   public async getLatestBlockHash(): Promise<BigNumber> {
@@ -104,14 +89,6 @@ export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvi
     return activeStake
   }
 
-  public getStakesForStakee(paymentId: BigNumber): Promise<IStake[]> {
-    throw new Error("Method not implemented.")
-  }
-
-  public async getPaymentIdFromAddress(publicKey: string): Promise<BigNumber> {
-    throw new Error("Method not implemented.")
-  }
-
   public async isBlockProducer(paymentId: BigNumber): Promise<boolean> {
     const stakable = await this.web3Service.getOrInitializeSC("XyStakableToken")
     return stakable.methods.isBlockProducer(paymentId).call()
@@ -122,8 +99,8 @@ export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvi
     // TODO load the Paramaterizer contract instead
     const bpReward = await governance.methods.get('xyBlockProducerRewardPct').call()
     const rewardComponents: IRewardComponents = {
-      blockProducers: bpReward,
-      supporters: 100 - bpReward
+      blockProducers: bpReward.value,
+      supporters: 100 - bpReward.value
     }
     return rewardComponents
   }
@@ -138,10 +115,6 @@ export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvi
     return consensus.methods.numBlocks().call()
   }
 
-  public getGasEstimateForRequest(requestId: BigNumber): Promise<BigNumber> {
-    throw new Error("Method not implemented.")
-  }
-
   public async getExpectedGasRefund(requestIds: BigNumber[]): Promise<BigNumber> {
     const requests = await this.getRequests(requestIds)
     const total = new BigNumber(0)
@@ -151,15 +124,43 @@ export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvi
     return total
   }
 
-  public canSubmitBlock(address: string): Promise<boolean> {
-    throw new Error("Method not implemented.")
+  public async getMinimumXyoRequestBounty(): Promise<BigNumber> {
+    return this.getGovernanceParam("xyXYORequestBountyMin")
   }
 
-  public getMinimumXyoRequestBounty(): Promise<number> {
-    throw new Error("Method not implemented.")
+  public async getStakeQuorumPct(): Promise<number> {
+    const pct = await this.getGovernanceParam("xyStakeQuorumPct")
+    return pct.toNumber()
   }
 
-  public submitBlock(
+  public async encodeBlock(
+    previousBlock: BigNumber,
+    requests: BigNumber[],
+    supportingData: Buffer,
+    responses: Buffer
+  ): Promise<BigNumber> {
+
+    const uintArr = requests.map(() => "uint")
+    const hash = this.solidityHashString(
+        [`uint`, ...uintArr, `bytes32`, `bytes`],
+        [previousBlock, ...requests, supportingData, responses]
+      )
+    return new BigNumber(hash)
+  }
+
+  public async signBlock(block: BigNumber): Promise<ISignatureComponents> {
+    const signedMessage = await this.web3Service.signMessage(block.toString())
+
+    const sig = signedMessage.slice(2)
+    const r = `0x${sig.slice(0, 64)}`
+    const s = `0x${sig.slice(64, 128)}`
+    const v = Number(sig.slice(128, 130)) + 27
+    const signature: ISignatureComponents = {
+      sigR:r, sigS:s, sigV:v.toString(), publicKey: this.web3Service.currentUser}
+    throw signature
+  }
+
+  public async submitBlock(
     blockProducer: string,
     previousBlock: BigNumber,
     requests: BigNumber[],
@@ -170,11 +171,79 @@ export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvi
     sigS: Buffer[],
     sigV: Buffer[]
   ): Promise<BigNumber> {
-    throw new Error("Method not implemented.")
+    const args = [
+      blockProducer,
+      previousBlock,
+      requests,
+      supportingData,
+      responses,
+      signers,
+      sigR,
+      sigS,
+      sigV
+    ]
+    const consensus = await this.web3Service.getOrInitializeSC("XyStakingConsensus")
+    return consensus.methods.submitBlock(...args).send()
   }
 
-  public createResponses(responses: IResponse[]): Promise<Buffer[]> {
-    throw new Error("Method not implemented.")
+  public createResponses(responses: IResponse[]): Buffer {
+    const responseTypes = responses.map(r => r.boolResponse ? 'bool' : 'uint')
+    const responseValues = responses.map(r => r.boolResponse ?
+      r.boolResponse : r.numResponse ?
+      r.numResponse : r.withdrawResponse)
+    // console.log(`TYPES AND VALUES`, responseTypes, responseValues)
+
+    const packedBytes = solidityPack(
+      [...responseTypes],
+      [...responseValues]
+    )
+
+    // console.log(`Packed`, packedBytes)
+    return packedBytes
+  }
+
+  public async getStakesForStakee(paymentId: BigNumber): Promise<IStake[]> {
+    const consensus = await this.web3Service.getOrInitializeSC("XyStakingConsensus")
+    const numStakeeStakes = await consensus.methods.numStakeeStakes(paymentId)
+    const stakeIdPromises = []
+    for (let i = 0; i < numStakeeStakes; i++) {
+      stakeIdPromises.push(consensus.methods.stakeeToStakingIds(paymentId, i).call())
+    }
+    return Promise.all(stakeIdPromises)
+  }
+
+  public getPaymentIdFromAddress(publicKey: string): BigNumber {
+    const keccak = this.solidityHashString([`address`],
+      [publicKey])
+    return new BigNumber(keccak)
+  }
+
+  public async getGasEstimateForRequest(requestId: BigNumber): Promise<BigNumber> {
+    const req = await this.getRequestById(requestId)
+    if (req) {
+      const consensusAddress = this.web3Service.getAddressOfContract("XyStakingConsensus")
+      const pOnD = await this.web3Service.getOrInitializeSC("XyPayOnDelivery")
+      return pOnD.methods.submitResponse(consensusAddress, IRequestType.Bool, true).estimateGas()
+    }
+    return new BigNumber(0)
+  }
+
+  public async canSubmitBlock(address: string): Promise<boolean> {
+    return Math.random() > 0.5 // Maybeee we wanna improve leader choosing
+  }
+
+  private solidityHashString(types: string[], values: any[]): string {
+    return `0x${soliditySHA3(
+        types,
+        values
+      )
+      .toString(`hex`)}`
+  }
+
+  private async getGovernanceParam(name: string): Promise<BigNumber> {
+    const governance = await this.web3Service.getOrInitializeSC("XyGovernance")
+    const result = await governance.methods.get(name).call()
+    return new BigNumber(result.value)
   }
 
   private async getRequests(indexes: BigNumber[]): Promise<IRequest[]> {
@@ -189,9 +258,9 @@ export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvi
     return Promise.all(idPromises) as Promise<IRequest[]>
   }
 
-  private async getNextBatchRequests(
-      unanswered: { [id: string]: IRequest }, start: number
-    ): Promise<{ [id: string]: IRequest }> {
+  private async getUnhandledRequestsBatch(
+    unanswered: { [id: string]: IRequest }, start: number
+  ): Promise<{ [id: string]: IRequest }> {
     const consensus = await this.web3Service.getOrInitializeSC("XyStakingConsensus")
 
     const batchRequests = 30 // num requests in search scope from end of request list
@@ -216,6 +285,6 @@ export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvi
         unanswered[index] = req as IRequest
       }
     })
-    return this.getNextBatchRequests(unanswered, start > batchRequests ? start - batchRequests : 0)
+    return this.getUnhandledRequestsBatch(unanswered, start > batchRequests ? start - batchRequests : 0)
   }
 }

@@ -18,7 +18,6 @@ import Web3 from 'web3'
 
 import { IConsensusContract, IContractData, IStakableTokenContract, IContractAbi } from './@types'
 import { XyoIpfsClient, IXyoIpfsClient } from '@xyo-network/ipfs-client'
-
 import { XyoBase } from '@xyo-network/base'
 import { XyoError, XyoErrors } from '@xyo-network/errors'
 import { HttpProvider } from 'web3-providers'
@@ -38,6 +37,11 @@ export class XyoWeb3Service extends XyoBase {
       port: '5002',
       protocol: "https"
     })
+  }
+
+  public async signMessage(message: string): Promise<string> {
+    const web3 = await this.getOrInitializeWeb3()
+    return web3.eth.sign(message, this.currentUser)
   }
 
   public async getContractByName(name: string): Promise<Contract> {

@@ -28,8 +28,11 @@ describe('Consensus', async () => {
         ipfsHash: "QmezVKUQ8BRK9jdEwxgNR1Xij4oqppMaGNsid7QnrBYszY",
         address: '0xf30742B61037dDD900f1B5caa358A1B311D9a375',
       }, XyGovernance: {
-        ipfsHash: "QmP8V44TaQc6PAYF53zWgEsTU9AsawoPpbZ1p1Hio5kdfN",
-        address: '0x60C7F7cDF4a71f2e5658448CBfd5E4C377e39877',
+        ipfsHash: "QmeTCP9Wr7FBH1bBMBKud7vPB7SPfY7hwASVYGpJyeSghH",
+        address: '0xC075B66AF0Bc7BB5a6cB638050654cefcbb028D3',
+      }, XyPayOnDelivery: {
+        ipfsHash: "QmaQx4Kgv1eJafDAnxMpLC1T8bPRFSMdEonTDz9bQPZHYH",
+        address: "0xeffDAa2738DD67525DBef75Baed996443Ae0e527"
       }
     })
     consensus = new XyoScscConsensusProvider(web3Service)
@@ -90,7 +93,10 @@ describe('Consensus', async () => {
     it('getRewardPercentages', async () => {
       const result = await consensus.getRewardPercentages()
       console.log("getRewardPercentages", result)
-      // expect(result).toEqual(false)
+    })
+    it.only('getStakeQuorumPct', async () => {
+      const result = await consensus.getStakeQuorumPct()
+      console.log("getStakeQuorumPct", result)
     })
   })
 })

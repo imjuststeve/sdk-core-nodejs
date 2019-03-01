@@ -29,10 +29,10 @@ export interface IConsensusProvider {
    * Given a public key address, returns the calculated paymentId
    *
    * @param {string} publicKey
-   * @returns {Promise<BigNumber>}
+   * @returns {BigNumber}
    * @memberof IConsensusProvider
    */
-  getPaymentIdFromAddress(publicKey: string): Promise<BigNumber>
+  getPaymentIdFromAddress(publicKey: string): BigNumber
 
   /**
    * For a particular stakee and staker, returns the active stake
@@ -94,7 +94,7 @@ export interface IConsensusProvider {
    * @returns {Promise<{[id: string]: IRequest}>} A dict where keys are the id of requests, and values are the request
    * @memberof IConsensusProvider
    */
-  getAllRequests(): Promise<{[id: string]: IRequest}>
+  getNextUnhandledRequests(): Promise<{[id: string]: IRequest}>
 
   /**
    * Given a particular requestId, returns the current gas estimate
@@ -143,10 +143,10 @@ export interface IConsensusProvider {
   /**
    * Returns the minimum XYO request bounty
    *
-   * @returns {Promise<number>}
+   * @returns {Promise<BigNumber>}
    * @memberof IConsensusProvider
    */
-  getMinimumXyoRequestBounty(): Promise<number>
+  getMinimumXyoRequestBounty(): Promise<BigNumber>
 
   /**
    * Submits a block to the blockchain
@@ -215,7 +215,7 @@ export interface IConsensusProvider {
    * @returns {Promise <Buffer[]>}
    * @memberof IConsensusProvider
    */
-  createResponses(responses: IResponse[]): Promise <Buffer[]>
+  createResponses(responses: IResponse[]): Buffer
 
   /**
    * Returns the percentage of the stake required to submit a new block
@@ -291,7 +291,7 @@ export interface IRequest {
  * @interface IResponse
  */
 export interface IResponse {
-  boolResponse: number
+  boolResponse: boolean
   numResponse: number
   withdrawResponse: number // Block Height in ethereum blocks
 }
@@ -316,7 +316,7 @@ export enum IRequestType { // something like this maybe, maybe-not
  */
 export interface ISignatureComponents {
   publicKey: string
-  sigR: Buffer,
-  sigS: Buffer,
-  sigV: Buffer
+  sigR: string,
+  sigS: string,
+  sigV: string
 }

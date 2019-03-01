@@ -49,7 +49,7 @@ export class Web3QuestionService extends XyoBase implements IQuestionsProvider {
 
   private async tryGetQuestion() {
     // This needs to be a lot more sophisticated than it currently is
-    const allQuestions = await this.consensusProvider.getAllRequests()
+    const allQuestions = await this.consensusProvider.getNextUnhandledRequests()
     if (Object.keys(allQuestions).length === 0) return
 
     const newQuestions = Object.keys(allQuestions).filter(k => this.alreadyFetchedQuestions[k] === undefined)
