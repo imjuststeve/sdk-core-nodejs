@@ -117,7 +117,7 @@ export class XyoBlockProducer extends XyoDaemon {
     }
 
     // tslint:disable-next-line:prefer-array-literal
-    const sigAccumulator: Array<{ pk: BigNumber, r: Buffer, s: Buffer, v: Buffer}> = []
+    const sigAccumulator: Array<{ pk: BigNumber, r: string, s: string, v: string}> = []
     let totalStakeAccumulated = new BigNumber(0)
 
     const mySig = await this.consensusProvider.signBlock(blockHash)
@@ -243,7 +243,7 @@ export class XyoBlockProducer extends XyoDaemon {
   }
 
   private async submitBlock(
-    sigAccumulator: { pk: BigNumber, r: Buffer, s: Buffer, v: Buffer}[], // tslint:disable-line:array-type
+    sigAccumulator: { pk: BigNumber, r: string, s: string, v: string}[], // tslint:disable-line:array-type
     mySig: ISignatureComponents,
     stakeConsensusBlockHeight: BigNumber,
     latestBlockHash: BigNumber,
@@ -278,18 +278,18 @@ export class XyoBlockProducer extends XyoDaemon {
   private onSignatureRequest(
     target: BigNumber,
     addToStake: (v: BigNumber) => BigNumber,
-    addSig: (publicKey: string, sig: { r: Buffer, s: Buffer, v: Buffer}) => void,
+    addSig: (publicKey: string, sig: { r: string, s: string, v: string}) => void,
     onQuorumReached: () => void
   ) {
     let resolved = false
 
     return async (publicKey: string, sigComponents: {
-      r: Buffer;
-      s: Buffer;
-      v: Buffer;
+      r: string;
+      s: string;
+      v: string;
     }) => {
       if (resolved) return
-      const paymentId = await this.consensusProvider.getPaymentIdFromAddress(publicKey)
+      const paymentId = this.consensusProvider.getPaymentIdFromAddress(publicKey)
       if (resolved || paymentId === undefined) return
       const activeStake = await this.consensusProvider.getActiveStake(paymentId)
       if (resolved || activeStake.eq(0)) return

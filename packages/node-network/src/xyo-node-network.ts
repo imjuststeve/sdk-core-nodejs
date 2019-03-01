@@ -96,7 +96,7 @@ export class XyoNodeNetwork extends XyoBase implements IXyoNodeNetwork {
 
   public requestSignaturesForBlockCandidate(
     candidate: IBlockWitnessRequestDTO,
-    callback: (publicKey: string, signatureComponents: { r: Buffer; s: Buffer; v: Buffer; }) => void
+    callback: (publicKey: string, signatureComponents: { r: string; s: string; v: string; }) => void
   ): unsubscribeFn {
     this.p2pService.publish('block-witness:request', Buffer.from(JSON.stringify(candidate)))
 
@@ -108,9 +108,9 @@ export class XyoNodeNetwork extends XyoBase implements IXyoNodeNetwork {
       }
 
       callback(msgPayload.publicKey, {
-        r: Buffer.from(msgPayload.signatureComponents.r, 'hex'),
-        s: Buffer.from(msgPayload.signatureComponents.s, 'hex'),
-        v: Buffer.from(msgPayload.signatureComponents.v, 'hex')
+        r: msgPayload.signatureComponents.r,
+        s: msgPayload.signatureComponents.s,
+        v: msgPayload.signatureComponents.v,
       })
     })
   }

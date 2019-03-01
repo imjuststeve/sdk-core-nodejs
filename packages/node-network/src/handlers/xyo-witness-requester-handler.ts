@@ -60,9 +60,9 @@ export class XyoWitnessRequestHandler extends XyoBaseHandler {
       const sigComponents = await this.consensusProvider.signBlock(encodedBlock)
       const res = {
         publicKey: sigComponents.publicKey,
-        r: sigComponents.sigR.toString('hex'),
-        s: sigComponents.sigS.toString('hex'),
-        c: sigComponents.sigV.toString('hex'),
+        r: sigComponents.sigR,
+        s: sigComponents.sigS,
+        c: sigComponents.sigV,
       }
       const bufferResponse = Buffer.from(JSON.stringify(res))
       this.p2pService.publish(`block-witness:request:${json.blockHash}`, bufferResponse)

@@ -40,9 +40,9 @@ describe('BlockProducer', () => {
         supportingData: Buffer, // hash
         responses: Buffer,
         signers: string[],
-        sigR: Buffer[],
-        sigS: Buffer[],
-        sigV: Buffer[]
+        sigR: string[],
+        sigS: string[],
+        sigV: string[]
       ) => {
         submitBlockGotCalled = true
         return undefined
@@ -106,9 +106,9 @@ describe('BlockProducer', () => {
         supportingData: Buffer, // hash
         responses: Buffer,
         signers: string[],
-        sigR: Buffer[],
-        sigS: Buffer[],
-        sigV: Buffer[]
+        sigR: string[],
+        sigS: string[],
+        sigV: string[]
       ) => {
         submitBlockGotCalled = true
         return undefined
@@ -182,9 +182,9 @@ describe('BlockProducer', () => {
         supportingData: Buffer, // hash
         responses: Buffer,
         signers: string[],
-        sigR: Buffer[],
-        sigS: Buffer[],
-        sigV: Buffer[]
+        sigR: string[],
+        sigS: string[],
+        sigV: string[]
       ) => {
         submitBlockGotCalled = true
         expect(previousBlock.eq(new BigNumber(100))).toBe(true)
@@ -227,9 +227,9 @@ describe('BlockProducer', () => {
     const nodeNetwork = await getNodeNetwork({
       callbackParams: [{
         publicKey: witnessAccount,
-        r: Buffer.alloc(32, 1),
-        s: Buffer.alloc(32, 1),
-        v: Buffer.alloc(32, 1)
+        r: "HALLO",
+        s: "HALLO",
+        v: "HALLO"
       }]
     })
 
@@ -266,9 +266,9 @@ async function getConsensusProvider(options: {
     supportingData: Buffer, // hash
     responses: Buffer,
     signers: string[],
-    sigR: Buffer[],
-    sigS: Buffer[],
-    sigV: Buffer[]
+    sigR: string[],
+    sigS: string[],
+    sigV: string[]
   ) => BigNumber | undefined
 }): Promise<IConsensusProvider> {
   // @ts-ignore
@@ -291,12 +291,12 @@ async function getConsensusProvider(options: {
     signBlock: async () => {
       return (options.signBlock && options.signBlock()) || {
         publicKey: '0xffff',
-        sigR: Buffer.alloc(32),
-        sigS: Buffer.alloc(32),
-        sigV: Buffer.alloc(32),
+        sigR: "HELLO_RY",
+        sigS: "HELLO_RY",
+        sigV: "HELLO_RY",
       }
     },
-    getPaymentIdFromAddress: async (addr) => {
+    getPaymentIdFromAddress: (addr) => {
       if (options.paymentIdByAddress) {
         return options.paymentIdByAddress[addr]
       }
@@ -319,9 +319,9 @@ async function getConsensusProvider(options: {
       supportingData: Buffer, // hash
       responses: Buffer,
       signers: string[],
-      sigR: Buffer[],
-      sigS: Buffer[],
-      sigV: Buffer[]
+      sigR: string[],
+      sigS: string[],
+      sigV: string[]
     ) => {
       if (options.onSubmitBlock) {
         const res = options.onSubmitBlock(
@@ -367,14 +367,14 @@ async function getActiveValidatedTransactions(
 async function getNodeNetwork(options?: {
   unsubscribe?: () => void,
   // tslint:disable-next-line:prefer-array-literal
-  callbackParams?: Array<{publicKey: string, r: Buffer, s: Buffer, v: Buffer}>
+  callbackParams?: Array<{publicKey: string, r: string, s: string, v: string}>
 }): Promise<IXyoNodeNetwork> {
 
   // @ts-ignore
   const nodeNetwork: IXyoNodeNetwork = {
     requestSignaturesForBlockCandidate: (dto, cb) => {
       // tslint:disable-next-line:prefer-array-literal
-      const cbs: Array<{publicKey: string, r: Buffer, s: Buffer, v: Buffer}> =
+      const cbs: Array<{publicKey: string, r: string, s: string, v: string}> =
         (options && options.callbackParams) || []
 
       cbs.map((x, index) => {

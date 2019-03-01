@@ -47,7 +47,7 @@ export interface IXyoNodeNetwork {
 
   requestSignaturesForBlockCandidate(
     candidate: IBlockWitnessRequestDTO,
-    callback: (publicKey: string, signatureComponents: { r: Buffer, s: Buffer, v: Buffer}) => void
+    callback: (publicKey: string, signatureComponents: { r: string, s: string, v: string}) => void
   ): unsubscribeFn
 
   listenForBlockWitnessRequests(consensusProvider: IConsensusProvider): unsubscribeFn
