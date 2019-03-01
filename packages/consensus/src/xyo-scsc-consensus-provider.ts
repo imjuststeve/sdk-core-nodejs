@@ -16,11 +16,23 @@ import { soliditySHA3, solidityPack } from 'ethereumjs-abi'
 
 export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvider {
 
+  private static CONFIRMATION_THRESHOLD = 24
+
   private web3Service: XyoWeb3Service
 
   constructor(private readonly web3: XyoWeb3Service) {
     super()
     this.web3Service = web3
+  }
+
+  public async getBlockHeight(): Promise<BigNumber> {
+    const web3 = await this.web3Service.getOrInitializeWeb3()
+    const blockNumber = await web3.eth.getBlockNumber()
+    return new BigNumber(blockNumber)
+  }
+
+  public async getBlockConfirmationTrustThreshold(): Promise<number> {
+    return XyoScscConsensusProvider.CONFIRMATION_THRESHOLD
   }
 
   public async getRequestById(id: BigNumber): Promise<IRequest | undefined> {
@@ -135,6 +147,7 @@ export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvi
 
   public async encodeBlock(
     previousBlock: BigNumber,
+    agreedStakeBlockHeight: BigNumber,
     requests: BigNumber[],
     supportingData: Buffer,
     responses: Buffer
@@ -142,8 +155,8 @@ export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvi
 
     const uintArr = requests.map(() => "uint")
     const hash = this.solidityHashString(
-        [`uint`, ...uintArr, `bytes32`, `bytes`],
-        [previousBlock, ...requests, supportingData, responses]
+      [`uint`, `uint`, ...uintArr, `bytes32`, `bytes`],
+      [previousBlock, agreedStakeBlockHeight, ...requests, supportingData, responses]
       )
     return new BigNumber(hash)
   }
@@ -162,6 +175,7 @@ export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvi
 
   public async submitBlock(
     blockProducer: string,
+    agreedStakeBlockHeight: BigNumber,
     previousBlock: BigNumber,
     requests: BigNumber[],
     supportingData: Buffer,
@@ -212,7 +226,7 @@ export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvi
     return Promise.all(stakeIdPromises)
   }
 
-  public getPaymentIdFromAddress(publicKey: string): BigNumber {
+  public getPaymentIdFromAddress(publicKey: string, blockHeight?: BigNumber): BigNumber {
     const keccak = this.solidityHashString([`address`],
       [publicKey])
     return new BigNumber(keccak)

@@ -4,12 +4,12 @@
  * @Email:  developer@xyfindables.com
  * @Filename: xyo-node-network.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Tuesday, 26th February 2019 2:58:50 pm
+ * @Last modified time: Thursday, 28th February 2019 3:37:08 pm
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
 
-import { IXyoNodeNetwork, IXyoComponentFeatureResponse } from "./@types"
+import { IXyoNodeNetwork, IXyoComponentFeatureResponse, IBlockWitnessRequestDTO } from "./@types"
 import { IXyoP2PService } from "@xyo-network/p2p"
 import { unsubscribeFn } from "@xyo-network/utils"
 import { IRequestPermissionForBlockResult } from "@xyo-network/attribution-request"
@@ -25,6 +25,9 @@ import { XyoRequestPermissionForBlockHandler } from "./handlers/xyo-request-perm
 
 import { IXyoTransaction, IXyoTransactionRepository } from '@xyo-network/transaction-pool'
 import { XyoReceivedTransactionHandler } from "./handlers/xyo-received-transaction-handler"
+import BigNumber from "bignumber.js"
+import { XyoWitnessRequestHandler } from "./handlers/xyo-witness-requester-handler"
+import { IConsensusProvider } from "@xyo-network/consensus"
 
 export class XyoNodeNetwork extends XyoBase implements IXyoNodeNetwork {
 
@@ -92,22 +95,12 @@ export class XyoNodeNetwork extends XyoBase implements IXyoNodeNetwork {
   }
 
   public requestSignaturesForBlockCandidate(
-    blockHash: string,
-    previousBlockHash: string,
-    requests: any[],
-    supportingDataHash: string,
-    responses: Buffer,
+    candidate: IBlockWitnessRequestDTO,
     callback: (publicKey: string, signatureComponents: { r: Buffer; s: Buffer; v: Buffer; }) => void
   ): unsubscribeFn {
-    this.p2pService.publish('block-witness:request', Buffer.from(JSON.stringify({
-      blockHash,
-      previousBlockHash,
-      requests,
-      supportingDataHash,
-      responses: responses.toString('hex')
-    })))
+    this.p2pService.publish('block-witness:request', Buffer.from(JSON.stringify(candidate)))
 
-    return this.p2pService.subscribe(`block-witness:request:${blockHash}`, (pk, message) => {
+    return this.p2pService.subscribe(`block-witness:request:${candidate.blockHash}`, (pk, message) => {
       const strMsg = message.toString()
       const msgPayload = JSON.parse(strMsg) as {
         publicKey: string,
@@ -115,11 +108,22 @@ export class XyoNodeNetwork extends XyoBase implements IXyoNodeNetwork {
       }
 
       callback(msgPayload.publicKey, {
-        r: Buffer.from(msgPayload.signatureComponents.r),
-        s: Buffer.from(msgPayload.signatureComponents.s),
-        v: Buffer.from(msgPayload.signatureComponents.v)
+        r: Buffer.from(msgPayload.signatureComponents.r, 'hex'),
+        s: Buffer.from(msgPayload.signatureComponents.s, 'hex'),
+        v: Buffer.from(msgPayload.signatureComponents.v, 'hex')
       })
     })
+  }
+
+  public listenForBlockWitnessRequests(consensusProvider: IConsensusProvider): unsubscribeFn {
+    const handler = new XyoWitnessRequestHandler(
+      this.serializationService,
+      this.p2pService,
+      consensusProvider
+    )
+
+    handler.initialize()
+    return handler.unsubscribeAll.bind(handler)
   }
 
   // tslint:disable-next-line:prefer-array-literal
