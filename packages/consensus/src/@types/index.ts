@@ -173,9 +173,9 @@ export interface IConsensusProvider {
     supportingData: Buffer, // hash
     responses: Buffer,
     signers: string[],
-    sigR: Buffer[],
-    sigS: Buffer[],
-    sigV: Buffer[]
+    sigR: string[],
+    sigS: string[],
+    sigV: string[]
   ): Promise<BigNumber>
 
   /**

@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: index.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Wednesday, 27th February 2019 11:02:29 am
+ * @Last modified time: Thursday, 28th February 2019 6:58:34 pm
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -27,7 +27,7 @@ export class Web3QuestionService extends XyoBase implements IQuestionsProvider {
 
   constructor (
     private readonly consensusProvider: IConsensusProvider,
-    private readonly requestResolver: IParameterizedProvider<string, IRequestDocument<any> | undefined>
+    private readonly requestResolver: IParameterizedProvider<string, Buffer | undefined>
   ) {
     super()
   }
@@ -63,7 +63,9 @@ export class Web3QuestionService extends XyoBase implements IQuestionsProvider {
     })[0]
 
     this.alreadyFetchedQuestions[questionId] = true
-    const resolvedQuestion = await this.requestResolver.get(questionId)
+    const resolvedQuestionBuffer = await this.requestResolver.get(questionId)
+    if (!resolvedQuestionBuffer) return
+    const resolvedQuestion = JSON.parse(resolvedQuestionBuffer.toString()) as IRequestDocument<any>
 
     if (resolvedQuestion === undefined || resolvedQuestion.type !== 'intersection') return
 

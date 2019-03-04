@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: index.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Thursday, 28th February 2019 3:03:18 pm
+ * @Last modified time: Thursday, 28th February 2019 6:58:43 pm
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -413,14 +413,14 @@ const consensusProvider: IXyoProvider<IConsensusProvider, undefined> = {
 const questionsProvider: IXyoProvider<IQuestionsProvider, undefined> = {
   async get(container, config) {
     const consensus = await container.get<IConsensusProvider>(IResolvers.CONSENSUS_PROVIDER)
-    const contentService = await container.get<IParameterizedProvider<string, IRequestDocument<any> | undefined>>(
+    const contentService = await container.get<IParameterizedProvider<string, Buffer | undefined>>(
       IResolvers.CONTENT_ADDRESSABLE_SERVICE
     )
     return new Web3QuestionService(consensus, contentService)
   }
 }
 
-const contentAddressableService: IXyoProvider<IParameterizedProvider<string, IRequestDocument<any> | undefined>, XyoIpfsClientCtorOptions> = {
+const contentAddressableService: IXyoProvider<IParameterizedProvider<string, Buffer | undefined>, XyoIpfsClientCtorOptions> = {
   async get(container, config) {
     const client = new XyoIpfsClient(config)
     return {
@@ -429,7 +429,7 @@ const contentAddressableService: IXyoProvider<IParameterizedProvider<string, IRe
 
         const ipfsAddr = `Qm${base58.encode(hexBuff)}`
         const rawData = await client.readFile(ipfsAddr)
-        return JSON.parse(rawData.toString()) as IRequestDocument<any>
+        return rawData
       }
     }
   }

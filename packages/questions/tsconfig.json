@@ -36,6 +36,7 @@
     {"path": "../peer-interaction"},
     {"path": "../transaction-pool"},
     {"path": "../node-network"},
-    {"path": "../signing"}
+    {"path": "../signing"},
+    {"path": "../utils"}
   ]
 }

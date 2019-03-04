@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: xyo-block-producer.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Thursday, 28th February 2019 3:41:53 pm
+ * @Last modified time: Thursday, 28th February 2019 6:31:39 pm
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -18,8 +18,7 @@ import { IXyoRepository, XyoDaemon, unsubscribeFn } from '@xyo-network/utils'
 import { IConsensusProvider, ISignatureComponents } from '@xyo-network/consensus'
 import { BigNumber } from 'bignumber.js'
 import { IXyoIntersectionTransaction } from '@xyo-network/questions'
-import { IXyoNodeNetwork } from '@xyo-network/node-network'
-import { IBlockWitnessRequestDTO } from '../node-network/dist/@types'
+import { IXyoNodeNetwork, IBlockWitnessRequestDTO } from '@xyo-network/node-network'
 
 const MAX_TRANSACTIONS = 10
 const MIN_TRANSACTIONS = 1

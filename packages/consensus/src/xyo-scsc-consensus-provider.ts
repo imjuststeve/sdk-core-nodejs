@@ -170,7 +170,8 @@ export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvi
     const v = Number(sig.slice(128, 130)) + 27
     const signature: ISignatureComponents = {
       sigR:r, sigS:s, sigV:v.toString(), publicKey: this.web3Service.currentUser}
-    throw signature
+
+    return signature
   }
 
   public async submitBlock(
@@ -181,9 +182,9 @@ export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvi
     supportingData: Buffer,
     responses: Buffer,
     signers: string[],
-    sigR: Buffer[],
-    sigS: Buffer[],
-    sigV: Buffer[]
+    sigR: string[],
+    sigS: string[],
+    sigV: string[]
   ): Promise<BigNumber> {
     const args = [
       blockProducer,
