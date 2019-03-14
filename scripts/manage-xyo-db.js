@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: create-xyo-db.js
  * @Last modified by: ryanxyo
- * @Last modified time: Thursday, 14th March 2019 12:12:32 pm
+ * @Last modified time: Thursday, 14th March 2019 1:42:24 pm
  * @License: All Rights Reserved 
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -82,18 +82,19 @@ async function main(argv) {
   
 }
 
-async function collectionUsernameAndPassword() {
+async function collectionUsernamePasswordDatabaseName() {
   let { password } = await prompt({type: 'input', initial: 'password', name: 'password', message: 'Enter a password for the sql database'})  
-  return {username: 'root', password}
+  let { database } = await prompt({type: 'input', initial: 'XyoDb', name: 'database', message: 'Enter a schema name for the sql database'})  
+  return {username: 'root', password, database}
 }
 
 async function tryStartXyoDbService() {
-  const {username, password } = await collectionUsernameAndPassword()
+  const {username, password, database } = await collectionUsernamePasswordDatabaseName()
   logInfo(`\nStarting MySQL service with credentials:\n\tUsername: ${username}\n\tpassword: ${password}`)
   
   const startSqlRes = shelljs.exec(`
     docker run \
-    --name XyoDb \
+    --name ${database} \
     -d \
     -p 3306:3306 \
     -e MYSQL_ROOT_PASSWORD=${password} \
