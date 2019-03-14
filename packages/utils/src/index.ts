@@ -317,7 +317,7 @@ export abstract class XyoDaemon extends XyoBase {
 }
 
 // tslint:disable-next-line:max-classes-per-file
-export class LifeCycleRunner {
+export class LifeCycleRunner extends XyoBase {
   public state:
     undefined
     | null
@@ -331,7 +331,7 @@ export class LifeCycleRunner {
     | 'stopped'
     | 'post:stopped' = undefined
 
-  constructor(public readonly lifeCyclable: ILifeCyclable) {}
+  constructor(public readonly lifeCyclable: ILifeCyclable) { super() }
 
   public async initialize(): Promise<void> {
     if (!this.canInitialize()) {

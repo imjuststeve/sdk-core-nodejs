@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: xyo-node.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Wednesday, 13th March 2019 4:07:06 pm
+ * @Last modified time: Thursday, 14th March 2019 11:02:28 am
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -24,13 +24,16 @@ import {
   IXyoProvider,
   IXyoProviderContainer,
   depScope,
-  ProcessManager,
   IXyoRunnable
 } from "@xyo-network/utils"
 import { resolvers } from './resolvers'
 import { IResolvers } from "./xyo-resolvers-enum"
 import { XyoError } from "@xyo-network/errors"
 import { XyoBase } from '@xyo-network/base'
+import { IXyoOriginChainRepository } from '@xyo-network/origin-chain'
+import { XyoFetter, XyoKeySet, IXyoFetter, IXyoPayload, XyoWitness, XyoSignatureSet, IXyoWitness, XyoBoundWitness, IXyoBoundWitness } from '@xyo-network/bound-witness'
+import { IXyoBoundWitnessPayloadProvider, IXyoBoundWitnessSuccessListener } from '@xyo-network/peer-interaction'
+import { IXyoSerializableObject } from '@xyo-network/serialization'
 
 export const DEFAULT_NODE_OPTIONS: IXyoNodeOptions = {
   modules: resolvers,
@@ -316,6 +319,70 @@ class XyoNodeLifeCycle extends BaseLifeCyclable implements IXyoProviderContainer
 // tslint:disable-next-line:max-classes-per-file
 export class XyoNode extends LifeCycleRunner {
 
+  public static async doBoundWitness(
+    server: XyoNode,
+    client: XyoNode,
+    additionalServerHeuristics: IXyoSerializableObject[],
+    additionalClientHeuristics: IXyoSerializableObject[],
+    additionalServerMetadata: IXyoSerializableObject[],
+    additionalClientMetaData: IXyoSerializableObject[]
+  ) {
+    let bwSession: IXyoBoundWitnessSession | undefined
+    try {
+      bwSession = await server.startBoundWitnessSession()
+      bwSession = await client.startBoundWitnessSession(bwSession)
+
+      bwSession = await server.getFetter(bwSession, 'server', additionalServerHeuristics)
+      bwSession = await client.getFetter(bwSession, 'client', additionalClientHeuristics)
+      bwSession = await client.getWitness(bwSession, 'client', additionalClientMetaData)
+      bwSession = await server.getWitness(bwSession, 'server', additionalServerMetadata)
+
+      if (
+        !bwSession.server ||
+        !bwSession.server.fetter ||
+        !bwSession.server.witness ||
+        !bwSession.client ||
+        !bwSession.client.fetter ||
+        !bwSession.client.witness
+      ) throw new XyoError(`There was an issue building bound witness`)
+
+      bwSession.boundWitness = new XyoBoundWitness([
+        bwSession.server.fetter,
+        bwSession.client.fetter,
+        bwSession.client.witness,
+        bwSession.server.witness
+      ])
+
+      await client.endBoundWitnessSession(bwSession, 'client')
+      await server.endBoundWitnessSession(bwSession, 'server')
+
+      return bwSession
+    } catch (e) {
+      this.logger.error(`There was an error doing bound witness with XyoNodes`, e)
+      throw e
+    } finally {
+      if (
+        bwSession &&
+        bwSession.client &&
+        bwSession.client.mutex &&
+        bwSession.client.originChainRepo
+      ) {
+        await bwSession.client.originChainRepo.releaseMutex(bwSession.client.mutex)
+        bwSession.client.mutex = undefined
+      }
+
+      if (
+        bwSession &&
+        bwSession.server &&
+        bwSession.server.mutex &&
+        bwSession.server.originChainRepo
+      ) {
+        await bwSession.server.originChainRepo.releaseMutex(bwSession.server.mutex)
+        bwSession.server.mutex = undefined
+      }
+    }
+  }
+
   constructor (private readonly nodeOptions?: Partial<IXyoNodeOptions>) {
     super(new XyoNodeLifeCycle(nodeOptions))
   }
@@ -328,27 +395,126 @@ export class XyoNode extends LifeCycleRunner {
     return (this.lifeCyclable as XyoNodeLifeCycle).hasDependency(provider)
   }
 
-  public async get<T>(provider: IResolvers, n: number): Promise<T> {
+  public async get<T>(provider: IResolvers): Promise<T> {
     return (this.lifeCyclable as XyoNodeLifeCycle).get<T>(provider)
+  }
+
+  public async endBoundWitnessSession(session: IXyoBoundWitnessSession, role: 'client' | 'server') {
+    const mySession = role === 'client' ? session.client : session.server
+    if (
+      !session.boundWitness ||
+      !mySession ||
+      !mySession.mutex
+    ) throw new XyoError(`Invalid bound witness state`)
+
+    const boundWitnessSuccessListener = await this.get<IXyoBoundWitnessSuccessListener>(
+        IResolvers.BOUND_WITNESS_SUCCESS_LISTENER
+    )
+
+    await boundWitnessSuccessListener.onBoundWitnessSuccess(session.boundWitness, mySession.mutex)
+    mySession.mutex = undefined
+    return
+  }
+
+  public async startBoundWitnessSession(existingSession?: IXyoBoundWitnessSession): Promise<IXyoBoundWitnessSession> {
+    const originChainRepo = await this.get<IXyoOriginChainRepository>(IResolvers.ORIGIN_CHAIN_REPOSITORY)
+    const mySession: IXyoBoundWitnessPartySession = {}
+    mySession.originChainRepo = originChainRepo
+
+    try {
+      mySession.mutex = await originChainRepo.acquireMutex()
+    } catch (err) {
+      this.logError(`There was an issue acquiring mutex for origin chain`, err)
+      throw err
+    }
+
+    const session = existingSession || { client: {}, server: {} }
+    if (existingSession) {
+      session.client = mySession
+    } else {
+      session.server = mySession
+    }
+
+    return session
+  }
+
+  public async getFetter(
+    bwSession: IXyoBoundWitnessSession,
+    role: 'client' | 'server',
+    additionalHeuristics: IXyoSerializableObject[]
+  ): Promise<IXyoBoundWitnessSession> {
+    const mySession = role === 'client' ? bwSession.client : bwSession.server
+    if (!mySession || !mySession.mutex || !mySession.originChainRepo) throw new XyoError(`Invalid session state`)
+
+    const payloadProvider = await this.get<IXyoBoundWitnessPayloadProvider>(IResolvers.BOUND_WITNESS_PAYLOAD_PROVIDER)
+    const payload = await payloadProvider.getPayload(mySession.originChainRepo)
+
+    additionalHeuristics.forEach((h) => {
+      const existingHeuristic = payload.heuristics.find(heuristic => heuristic.schemaObjectId === h.schemaObjectId)
+      if (existingHeuristic) throw new XyoError(`Heuristic already exists with ${h.schemaObjectId}`)
+      payload.heuristics.push(h)
+    })
+
+    const mySigners = await mySession.originChainRepo.getSigners()
+    const myFetter = new XyoFetter(new XyoKeySet(mySigners.map(s => s.publicKey)), payload.heuristics)
+    mySession.fetter = myFetter
+    mySession.payload = payload
+
+    return bwSession
+  }
+
+  public async getWitness(
+    bwSession: IXyoBoundWitnessSession,
+    role: 'client' | 'server',
+    additionalMetaData: IXyoSerializableObject[]
+  ): Promise<IXyoBoundWitnessSession> {
+    const mySession = role === 'client' ? bwSession.client : bwSession.server
+    if (
+      !bwSession.server ||
+      !bwSession.server.fetter ||
+      !bwSession.client ||
+      !bwSession.client.fetter ||
+      !mySession ||
+      !mySession.mutex ||
+      !mySession.originChainRepo ||
+      !mySession.payload
+    ) throw new XyoError(`Invalid session state`)
+
+    const payload = mySession.payload
+
+    additionalMetaData.forEach((m) => {
+      const existingMetaData = payload.metadata.find(metaDataItem => metaDataItem.schemaObjectId === m.schemaObjectId)
+      if (existingMetaData) throw new XyoError(`Metadata already exists with ${m.schemaObjectId}`)
+      payload.metadata.push(m)
+    })
+
+    const mySigners = await mySession.originChainRepo.getSigners()
+    const signingData = Buffer.concat([
+      bwSession.server.fetter.serialize(),
+      bwSession.client.fetter.serialize(),
+    ])
+
+    const sigs = await Promise.all(mySigners.map(signer => signer.signData(signingData)))
+    const myWitness = new XyoWitness(
+      new XyoSignatureSet(sigs),
+      payload.metadata
+    )
+
+    mySession.witness = myWitness
+    return bwSession
   }
 }
 
-export async function main() {
-  const newNode = new XyoNode({
-    config: {
-      data: {
-        path: './node-db'
-      },
-      originChainRepository: {
-        data: './node-db/origin-chain'
-      }
-    }
-  })
-
-  const managedProcessNode = new ProcessManager(newNode)
-  managedProcessNode.manage(process)
+export interface IXyoBoundWitnessSession {
+  server?: IXyoBoundWitnessPartySession
+  client?: IXyoBoundWitnessPartySession
+  boundWitness?: IXyoBoundWitness
 }
 
-if (require.main === module) {
-  main()
+export interface IXyoBoundWitnessPartySession {
+  mutex?: any
+  originChainRepo?: IXyoOriginChainRepository,
+  fetter?: IXyoFetter
+  witness?: IXyoWitness
+  payload?: IXyoPayload
 }

@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: index.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Friday, 15th February 2019 10:36:44 am
+ * @Last modified time: Thursday, 14th March 2019 10:13:56 am
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -30,4 +30,4 @@ export {
 
 export { resolvers } from './resolvers'
 export { IResolvers } from './xyo-resolvers-enum'
-export { main, XyoNode, DEFAULT_NODE_OPTIONS } from './xyo-node'
+export { XyoNode, DEFAULT_NODE_OPTIONS } from './xyo-node'

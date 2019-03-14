@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: index.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Wednesday, 13th March 2019 3:55:03 pm
+ * @Last modified time: Thursday, 14th March 2019 9:53:29 am
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -78,7 +78,7 @@ export class XyoAppLauncher extends XyoBase {
     }
   }
 
-  public async start () {
+  public async start (underProcessManager: boolean) {
     if (!this.config) throw new XyoError(`Config not initialized`)
 
     const nodeData = path.resolve(this.config.data, this.config.name)
@@ -204,8 +204,12 @@ export class XyoAppLauncher extends XyoBase {
         }
       }
     })
-    const managedProcessNode = new ProcessManager(newNode)
-    managedProcessNode.manage(process)
+    if (underProcessManager) {
+      const managedProcessNode = new ProcessManager(newNode)
+      await managedProcessNode.manage(process)
+    }
+
+    return newNode
   }
 
   private async addPidToPidsFolder() {
@@ -243,7 +247,7 @@ export async function main(args: string[]) {
   }
 
   try {
-    await appLauncher.start()
+    await appLauncher.start(true)
   } catch (err) {
     console.error(`There was an error during start. Will exit`, err)
     process.exit(1)
