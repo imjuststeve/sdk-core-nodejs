@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: xyo-sql-archivist-repository.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Wednesday, 6th February 2019 10:04:16 am
+ * @Last modified time: Thursday, 14th March 2019 12:55:11 pm
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -421,9 +421,9 @@ export class XyoArchivistSqlRepository extends XyoBase implements IXyoArchivistR
         payloadItemsIds: payloadItemsIds.map(payloadItemArray => payloadItemArray.join(', ')),
       }
 
-      this.logInfo(
-        `Successfully created an origin block with component parts:\n${XyoBase.stringify(idHierarchy)}`
-      )
+      // this.logInfo(
+      //   `Successfully created an origin block with component parts:\n${XyoBase.stringify(idHierarchy)}`
+      // )
     } catch (err) {
       this.logError(`Failed to add an origin block`, err)
       throw err

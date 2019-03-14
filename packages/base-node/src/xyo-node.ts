@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: xyo-node.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Thursday, 14th March 2019 11:02:28 am
+ * @Last modified time: Thursday, 14th March 2019 1:37:53 pm
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -296,9 +296,16 @@ class XyoNodeLifeCycle extends BaseLifeCyclable implements IXyoProviderContainer
   private async resolveOptions() {
     if (!this.options) {
       this.opts = DEFAULT_NODE_OPTIONS
+    } else {
+      // @ts-ignore
+      const configOpts = this.options.config || DEFAULT_NODE_OPTIONS.config
+      const modules = this.options.modules || DEFAULT_NODE_OPTIONS.modules
+      this.opts = {
+        modules,
+        config: configOpts,
+      }
     }
 
-    this.opts = merge.recursive(DEFAULT_NODE_OPTIONS, this.options)
   }
 
   private async createDataDirectory(nodeOptions: PartialNodeOptions) {
@@ -404,7 +411,8 @@ export class XyoNode extends LifeCycleRunner {
     if (
       !session.boundWitness ||
       !mySession ||
-      !mySession.mutex
+      !mySession.mutex ||
+      !mySession.originChainRepo
     ) throw new XyoError(`Invalid bound witness state`)
 
     const boundWitnessSuccessListener = await this.get<IXyoBoundWitnessSuccessListener>(
@@ -412,6 +420,7 @@ export class XyoNode extends LifeCycleRunner {
     )
 
     await boundWitnessSuccessListener.onBoundWitnessSuccess(session.boundWitness, mySession.mutex)
+    await mySession.originChainRepo.releaseMutex(mySession.mutex)
     mySession.mutex = undefined
     return
   }
@@ -444,7 +453,9 @@ export class XyoNode extends LifeCycleRunner {
     additionalHeuristics: IXyoSerializableObject[]
   ): Promise<IXyoBoundWitnessSession> {
     const mySession = role === 'client' ? bwSession.client : bwSession.server
-    if (!mySession || !mySession.mutex || !mySession.originChainRepo) throw new XyoError(`Invalid session state`)
+    if (!mySession || !mySession.mutex || !mySession.originChainRepo) {
+      throw new XyoError(`Invalid session state`)
+    }
 
     const payloadProvider = await this.get<IXyoBoundWitnessPayloadProvider>(IResolvers.BOUND_WITNESS_PAYLOAD_PROVIDER)
     const payload = await payloadProvider.getPayload(mySession.originChainRepo)

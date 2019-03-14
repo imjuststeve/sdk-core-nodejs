@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: xyo-block-producer.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Tuesday, 12th March 2019 2:30:40 pm
+ * @Last modified time: Thursday, 14th March 2019 12:50:31 pm
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -65,7 +65,7 @@ export class XyoBlockProducer extends XyoDaemon {
 
     if (Object.keys(list).length < MIN_TRANSACTIONS) {
       this.logInfo(
-        'There are ' + Object.keys(list).length + 'transactions in the transaction pool, ' +
+        'There are ' + Object.keys(list).length + ' transactions in the transaction pool, ' +
         'which is not enough transactions to process'
       )
       return
@@ -105,6 +105,14 @@ export class XyoBlockProducer extends XyoDaemon {
       responses: Buffer.alloc(0),
       supportingData: [] as any[]
     }))
+
+    if (candidate.requests.length < MIN_TRANSACTIONS) {
+      this.logInfo(
+        'There are ' + Object.keys(list).length + ' transactions in the transaction pool, ' +
+        'which is not enough transactions to process'
+      )
+      return
+    }
 
     const jsonSupportDataBuf = Buffer.from(JSON.stringify(candidate.supportingData))
     const supportingDataHash = await this.contentService.add(jsonSupportDataBuf)

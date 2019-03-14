@@ -39,7 +39,6 @@ export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvi
   public async getRequestById(id: string, blockHeight?: BN): Promise<IRequest | undefined> {
     const consensus = await this.web3Service.getOrInitializeSC("XyStakingConsensus")
     const req = await consensus.methods.requestsById(id).call({}, blockHeight)
-    console.log('Got Request', req)
     if (!req.createdAt || req.createdAt === '0') {
       return undefined
     }
@@ -99,7 +98,6 @@ export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvi
     const stakeDatas = await Promise.all(stakeFeches)
     const activeStake = new BN(0)
     stakeDatas.forEach((stakeData: any) => {
-      console.log("LOOKING AT STAKE DATA", stakeData)
       if (stakeData.staker === stakerAddr && stakeData.stakee === paymentId) {
         activeStake.add(stakeData.amount)
       }
@@ -176,7 +174,6 @@ export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvi
       [`bytes32`, `uint`, ...bytes32Arr, `bytes32`, `bytes`],
       args
     )
-    console.log("Hashing packed bytes", hash, packedBytesCheck, args)
     return hash
   }
 
@@ -184,7 +181,6 @@ export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvi
     this.logInfo(`Sign Block ${block}`)
     const signedMessage = await this.web3Service.signMessage(block)
     const sig = signedMessage
-    console.log("Signed message", signedMessage)
     // TODO Clean (this is broken in web3 beta 48):
     const r = `${sig.slice(0, 66)}`
     const s = `0x${sig.slice(66, 130)}`
@@ -206,17 +202,6 @@ export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvi
     sigS: string[],
     sigV: number[]
   ): Promise<string> {
-    console.log(`Submit block args`, JSON.stringify({
-      previousBlock,
-      agreedStakeBlockHeight,
-      requests,
-      supportingData,
-      responses,
-      signers,
-      sigR,
-      sigS,
-      sigV,
-    }, null, 2))
     const args = [
       previousBlock,
       agreedStakeBlockHeight.toString(),
@@ -243,17 +228,13 @@ export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvi
     try {
       const consensus = await this.web3Service.getOrInitializeSC("XyStakingConsensus")
       const data = consensus.methods.submitBlock(...args).encodeABI()
-      // console.log("The packed bytes of the message", check)
-      console.log("Submitting block with args: ", args)
-      // console.log("DATA ABOUT TO SEND", data.toString())
       // const response = await this.web3Service.callRawTx({ data, to: consensus.address })
       // const response = await consensus.methods.submitBlock(...args)
       //        .send({ from: this.web3Service.accountAddress, gas: 3721975})
-      // console.log("call response from contract", response)
       // return response
 
       const tx = await this.web3Service.sendRawTx({ data, to: consensus.address })
-      console.log("Got Transaction!!!", tx)
+      this.logInfo("Got Transaction!!!", tx)
 
       const newBlock = await this.decodeLogs(tx.logs[0].data, tx.logs[0].topics)
 
@@ -268,14 +249,12 @@ export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvi
     const responseValues = responses.map(r => r.boolResponse ?
       r.boolResponse : r.numResponse ?
       r.numResponse : r.withdrawResponse)
-    // console.log(`TYPES AND VALUES`, responseTypes, responseValues)
 
     const packedBytes = solidityPack(
       [...responseTypes],
       [...responseValues]
     )
 
-    // console.log(`Packed`, packedBytes)
     return packedBytes
   }
 
@@ -332,7 +311,6 @@ export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvi
       hexString,
       topics)
 
-    console.log("Decoded logs", result)
     return result.blockHash
   }
 
@@ -370,7 +348,6 @@ export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvi
       }
     }
     const requestDatas = await Promise.all(idPromises)
-    console.log('Got datas', requestDatas)
 
     return requestDatas as IRequest[]
   }
@@ -419,14 +396,12 @@ export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvi
     }
 
     const requestIds = await Promise.all(promises)
-    console.log("Got Request Ids", requestIds)
     const requests = await this.getRequests(requestIds)
 
     requests.map((req1, index) => {
       const req = req1 as IRequest
       if (!req.hasResponse && Object.keys(unanswered).length < maxTransactions) {
         const ipfsHash = this.getIpfsHashFromBytes32(requestIds[index])
-        console.log("Generated ipfs hash", ipfsHash)
         unanswered[ipfsHash] = req as IRequest
       }
     })

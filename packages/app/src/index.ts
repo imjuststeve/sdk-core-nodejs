@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: index.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Thursday, 14th March 2019 9:53:29 am
+ * @Last modified time: Thursday, 14th March 2019 11:34:45 am
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -207,6 +207,9 @@ export class XyoAppLauncher extends XyoBase {
     if (underProcessManager) {
       const managedProcessNode = new ProcessManager(newNode)
       await managedProcessNode.manage(process)
+    } else {
+      await newNode.initialize()
+      await newNode.start()
     }
 
     return newNode

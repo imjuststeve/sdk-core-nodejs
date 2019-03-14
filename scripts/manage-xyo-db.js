@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: create-xyo-db.js
  * @Last modified by: ryanxyo
- * @Last modified time: Tuesday, 5th February 2019 11:14:02 am
+ * @Last modified time: Thursday, 14th March 2019 12:12:32 pm
  * @License: All Rights Reserved 
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -83,9 +83,8 @@ async function main(argv) {
 }
 
 async function collectionUsernameAndPassword() {
-  let { username } = await prompt({type: 'input', initial: 'admin', name: 'username', message: 'Enter a username for the sql database'})
   let { password } = await prompt({type: 'input', initial: 'password', name: 'password', message: 'Enter a password for the sql database'})  
-  return {username, password}
+  return {username: 'root', password}
 }
 
 async function tryStartXyoDbService() {
@@ -97,10 +96,7 @@ async function tryStartXyoDbService() {
     --name XyoDb \
     -d \
     -p 3306:3306 \
-    -e MYSQL_USER=${username} \
-    -e MYSQL_PASSWORD=${password} \
-    -e MYSQL_DATABASE=Xyo \
-    -e MYSQL_RANDOM_ROOT_PASSWORD=yes \
+    -e MYSQL_ROOT_PASSWORD=${password} \
     mysql:5.7.24 --sql_mode=NO_ENGINE_SUBSTITUTION  
   `)
 
