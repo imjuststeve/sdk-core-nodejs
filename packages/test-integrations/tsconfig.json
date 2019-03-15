@@ -30,5 +30,7 @@
     {"path": "../origin-chain"},
     {"path": "../signing"},
     {"path": "../heuristics-common"},
+    {"path": "../bound-witness"},
+    {"path": "../serializer"},
   ]
 }

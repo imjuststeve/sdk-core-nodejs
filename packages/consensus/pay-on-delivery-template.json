@@ -1,15 +1,15 @@
 {
-  "xyoBounty": 100,
-  "xyoPayOnDelivery": 200,
-  "weiPayOnDelivery": 300,
+  "xyoBounty": 0,
+  "xyoPayOnDelivery": 0,
+  "weiPayOnDelivery": 0,
   "beneficiary": "0xb6A195D48BDe5757F10aa49181ca18D2977f25e3",
   "type": "intersection",
   "data": {
   "partyOne": [
-  "000c415b7e9dd9431d47fe34634860f9f56ce9666566e53fc2df1d1545e5c8258dee27db149563594e6cee6a794c8be0f732476a8a316d4c7ccebc9fdd52a8ebd0dfa3"
+  "000c41f532a80d42c1422116f0540e406ff38b082e77e316962202610b4dbe281bd036c9ee415a520d76933b3c53f1d487733e0e76754bce9e064272b57b93fbb20973"
   ],
   "partyTwo": [
-  "000c41f87b272b092da9cb4ead77b5858710ebce43186158d349ec6867885f477329c644ccb628ae4b7bd9dfd323c8a7df34247b2db3d4b8abc345b315b4f5e54388a5"
+  "000c41289961c132628b88729eb4c7bd2d0476d25e264637faa6329cf17fa6ff54e91647b40a97af5613067b155e73807713b6b367a7d1f2795c06a04e0ade41311dd1"
   ],
   "markers": [],
   "direction": null

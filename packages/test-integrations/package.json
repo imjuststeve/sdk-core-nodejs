@@ -15,7 +15,9 @@
     "@xyo-network/heuristics-common": "^0.31.0",
     "@xyo-network/origin-chain": "^0.31.0",
     "@xyo-network/signing": "^0.31.0",
-    "@xyo-network/hashing": "^0.31.0"
+    "@xyo-network/hashing": "^0.31.0",
+    "@xyo-network/bound-witness": "^0.31.0",
+    "@xyo-network/serializer": "^0.31.0"
   },
   "devDependencies": {
     "@types/jest": "^23.3.1",

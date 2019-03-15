@@ -47,7 +47,7 @@ export class XyoRequestPermissionForBlockHandler extends XyoBaseHandler {
 
     this.addUnsubscribe(
       subscribeTopic,
-      this.p2pService.subscribeOnce(subscribeTopic, this.blockPermissionResponse())
+      this.p2pService.subscribe(subscribeTopic, this.blockPermissionResponse())
     )
   }
 
