@@ -12,7 +12,7 @@
 
 import { IXyoOriginBlockRepository } from "@xyo-network/origin-block-repository"
 import { IXyoOriginChainRepository, IBlockInOriginChainResult, XyoBridgeHashSet, XyoBridgeBlockSet } from "@xyo-network/origin-chain"
-import { IXyoHash } from "@xyo-network/hashing"
+import { IXyoHash, IXyoHashProvider } from "@xyo-network/hashing"
 import { IXyoBoundWitness, IXyoPayload, XyoKeySet, XyoFetter, XyoFetterSet, IXyoFetter, XyoWitness, XyoWitnessSet, XyoSignatureSet, XyoBoundWitness } from "@xyo-network/bound-witness"
 import { IXyoSigner } from "@xyo-network/signing"
 import { IXyoBoundWitnessPayloadProvider, IXyoBoundWitnessSuccessListener } from "@xyo-network/peer-interaction"
@@ -29,6 +29,7 @@ export class XyoBlockPermissionResponseHandler extends XyoBaseHandler {
     private readonly originChainRepository: IXyoOriginChainRepository,
     private readonly payloadProvider: IXyoBoundWitnessPayloadProvider,
     private readonly boundWitnessSuccessListener: IXyoBoundWitnessSuccessListener,
+    private readonly hashProvider: IXyoHashProvider,
     private readonly p2pService: IXyoP2PService
   ) {
     super(serializationService)
@@ -65,7 +66,7 @@ export class XyoBlockPermissionResponseHandler extends XyoBaseHandler {
     if (belongsToMeResult.result) {
       mutex = await this.originChainRepository.acquireMutex()
       if (!mutex) return
-      return this.doBoundWitness(hash, [block], mutex)
+      return this.doBoundWitness(hash, [hash], [block], mutex)
         .then(() => this.originChainRepository.releaseMutex(mutex))
         .catch(() => this.originChainRepository.releaseMutex(mutex))
     }
@@ -94,9 +95,12 @@ export class XyoBlockPermissionResponseHandler extends XyoBaseHandler {
 
     mutex = await this.originChainRepository.acquireMutex()
     if (!mutex) return
+    const supportingDataHashes = await Promise.all(
+      supportingDataBlocks.map(blk => this.hashProvider.createHash(blk.getSigningData()))
+    )
 
     // Found Attribution, do just-in-time bound witness
-    return this.doBoundWitness(hash, [block, ...supportingDataBlocks], mutex)
+    return this.doBoundWitness(hash, [hash, ...supportingDataHashes], [block, ...supportingDataBlocks], mutex)
       .then(() => this.originChainRepository.releaseMutex(mutex))
       .catch(() => this.originChainRepository.releaseMutex(mutex))
   }
@@ -174,11 +178,11 @@ export class XyoBlockPermissionResponseHandler extends XyoBaseHandler {
     return undefined
   }
 
-  private async doBoundWitness(hash: IXyoHash, blocks: IXyoBoundWitness[], mutex: any) {
+  private async doBoundWitness(forHash: IXyoHash, hashes: IXyoHash[], blocks: IXyoBoundWitness[], mutex: any) {
     const newBoundWitness = await this.doBoundWitnessWithSupportingData(
-      hash,
+      forHash,
       blocks,
-      [hash],
+      hashes,
       await this.originChainRepository.getSigners(),
       await this.payloadProvider.getPayload(this.originChainRepository)
     )

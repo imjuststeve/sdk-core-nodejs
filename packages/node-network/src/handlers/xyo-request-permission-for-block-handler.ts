@@ -119,7 +119,9 @@ export class XyoRequestPermissionForBlockHandler extends XyoBaseHandler {
           const h = await this.hashProvider.createHash(bw.getSigningData())
           memo[h.serializeHex()] = bw
           return memo
-        }, Promise.resolve({}))
+        }, Promise.resolve({
+          [newBoundWitnessHash.serializeHex()]: newBoundWitness
+        }))
 
       // Callback
       this.callback(witnessSetPk, {

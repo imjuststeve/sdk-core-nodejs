@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: xyo-node-network.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Tuesday, 12th March 2019 3:48:02 pm
+ * @Last modified time: Friday, 15th March 2019 3:43:31 pm
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -62,7 +62,8 @@ export class XyoNodeNetwork extends XyoBase implements IXyoNodeNetwork {
       !this.boundWitnessSuccessListener ||
       !this.payloadProvider ||
       !this.originChainRepository ||
-      !this.originBlockRepository
+      !this.originBlockRepository ||
+      !this.hashProvider
     ) {
       throw new XyoError(`Insufficient dependencies`)
     }
@@ -73,7 +74,8 @@ export class XyoNodeNetwork extends XyoBase implements IXyoNodeNetwork {
       this.originChainRepository,
       this.payloadProvider,
       this.boundWitnessSuccessListener,
-      this.p2pService
+      this.hashProvider,
+      this.p2pService,
     )
 
     handler.initialize()
