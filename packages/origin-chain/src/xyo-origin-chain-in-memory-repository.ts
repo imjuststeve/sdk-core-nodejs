@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: xyo-origin-chain-in-memory-repository.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Wednesday, 6th March 2019 4:42:51 pm
+ * @Last modified time: Thursday, 14th March 2019 5:15:57 pm
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -84,7 +84,7 @@ export class XyoOriginChainStateInMemoryRepository extends XyoBase implements IX
   }
 
   public async canAcquireMutex() {
-    return this.mutex !== undefined
+    return this.mutex === undefined
   }
 
   /**

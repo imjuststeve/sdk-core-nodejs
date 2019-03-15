@@ -219,7 +219,8 @@ export class XyoBlockPermissionResponseHandler extends XyoBaseHandler {
         resolve
       )
 
-      const topic = `block-permission:response:${forHash.serializeHex()}:bound-witness-fragment`
+      const topic =
+        `block-permission:response:${forHash.serializeHex()}:bound-witness-fragment:${keySet.keys[0].serializeHex()}`
       this.addUnsubscribe(
         topic,
         this.p2pService.subscribeOnce(
@@ -257,14 +258,24 @@ export class XyoBlockPermissionResponseHandler extends XyoBaseHandler {
         new XyoWitness(new XyoSignatureSet(signatures), [...payload.metadata, new XyoBridgeBlockSet(blocks)])
       ])
 
-      const nextTopic = `block-permission:response:${forHash.serializeHex()}:witness-set`
+      // tslint:disable-next-line:max-line-length
+      const nextTopic = `block-permission:response:${forHash.serializeHex()}:witness-set:${signers[0].publicKey.serializeHex()}`
       this.p2pService.publish(nextTopic, witnessSet.serialize())
-      resolvePromise(new XyoBoundWitness([
+      const newBoundWitness = new XyoBoundWitness([
         fetter,
         boundWitnessFragment.fetterWitnesses[0],
         boundWitnessFragment.fetterWitnesses[1],
         witnessSet.witnesses[0]
-      ]))
+      ])
+
+      this.logInfo('block-permission-response', JSON.stringify({
+        f1: fetter.serializeHex(),
+        f2: boundWitnessFragment.fetterWitnesses[0].serializeHex(),
+        w1: boundWitnessFragment.fetterWitnesses[1].serializeHex(),
+        w2: witnessSet.witnesses[0].serializeHex(),
+      }, null, 2))
+
+      resolvePromise(newBoundWitness)
     }
   }
 }

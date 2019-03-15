@@ -67,8 +67,10 @@ export class XyoRequestPermissionForBlockHandler extends XyoBaseHandler {
       if (!result) return
 
       const { fetter, fetterSet, witness, boundWitnessFragment } = result
+      const theirPk = fetterSet.fetters[0].keySet.keys[0].serializeHex()
 
-      const boundWitnessFragTopic = `block-permission:response:${this.blockHash.serializeHex()}:bound-witness-fragment`
+      // tslint:disable-next-line:max-line-length
+      const boundWitnessFragTopic = `block-permission:response:${this.blockHash.serializeHex()}:bound-witness-fragment:${theirPk}`
       this.p2pService.publish(boundWitnessFragTopic, boundWitnessFragment.serialize())
       this.handleWitnessSetMessage(fetterSet, fetter, witness)
     }
@@ -79,7 +81,8 @@ export class XyoRequestPermissionForBlockHandler extends XyoBaseHandler {
     fetter: IXyoFetter,
     witness: IXyoWitness
   ) {
-    const nextTopic = `block-permission:response:${this.blockHash.serializeHex()}:witness-set`
+    const theirPk = fetterSet.fetters[0].keySet.keys[0].serializeHex()
+    const nextTopic = `block-permission:response:${this.blockHash.serializeHex()}:witness-set:${theirPk}`
 
     this.addUnsubscribe(nextTopic, this.p2pService.subscribeOnce(nextTopic, async (witnessSetPk, witnessSetMessage) => {
       const witnessSet = this.messageParser.tryParseWitnessSet(witnessSetMessage, { publicKey: witnessSetPk })
@@ -87,11 +90,18 @@ export class XyoRequestPermissionForBlockHandler extends XyoBaseHandler {
         return
       }
 
+      this.logInfo('block-permission-request', JSON.stringify({
+        f1: fetterSet.fetters[0].serializeHex(),
+        f2: fetter.serializeHex(),
+        w1: witness.serializeHex(),
+        w2: witnessSet.witnesses[0].serializeHex(),
+      }, null, 2))
+
       const newBoundWitness = new XyoBoundWitness([
         fetterSet.fetters[0],
         fetter,
         witness,
-        witnessSet.witnesses[0]
+        witnessSet.witnesses[0],
       ])
 
       await this.boundWitnessSuccessListener.onBoundWitnessSuccess(newBoundWitness, this.mutex)

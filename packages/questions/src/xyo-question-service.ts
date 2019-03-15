@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: xyo-question-service.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Friday, 8th February 2019 12:39:33 pm
+ * @Last modified time: Thursday, 14th March 2019 5:02:47 pm
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -232,7 +232,7 @@ export class XyoQuestionService extends XyoBase implements IXyoQuestionService {
   }
 
   private async getBlockFromArchivistNetwork(hash: IXyoHash): Promise<IXyoBoundWitness | undefined> {
-    return undefined // TODO
+    return this.archivistNetwork.getBlock(hash)
   }
 
   private async resolveBlockByHash(hash: IXyoHash) {

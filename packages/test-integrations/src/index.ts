@@ -4,16 +4,17 @@
  * @Email:  developer@xyfindables.com
  * @Filename: index.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Thursday, 14th March 2019 1:13:58 pm
+ * @Last modified time: Thursday, 14th March 2019 4:48:48 pm
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
 
 import { XyoAppLauncher } from '@xyo-network/app'
-import { XyoNode } from '@xyo-network/base-node'
-import { rssiSerializationProvider } from '@xyo-network/heuristics-common'
+import { XyoNode, IXyoResolvers, IResolvers } from '@xyo-network/base-node'
+import { rssiSerializationProvider, XyoGps } from '@xyo-network/heuristics-common'
 import { getHashingProvider } from '@xyo-network/hashing'
-import { XyoBridgeHashSet, XyoBridgeBlockSet } from '@xyo-network/origin-chain'
+import { XyoBridgeHashSet, XyoBridgeBlockSet, IXyoOriginChainRepository } from '@xyo-network/origin-chain'
+import { IXyoPublicKey } from '@xyo-network/signing'
 
 export async function main(args: string[])  {
   const hasher = getHashingProvider('sha256')
@@ -26,7 +27,7 @@ export async function main(args: string[])  {
       a2,
       d1,
       d2
-    ] = await ['s1', 's2', 'b1', 'a1', 'a2', 'd1', 'd2'].reduce(async (promiseChain, nodeId, nodeIndex) => {
+    ] = await ['s1', 's2', 'b1', 'a1', 'd1', 'd2'].reduce(async (promiseChain, nodeId, nodeIndex) => {
       const nodes = await promiseChain
       const p: Promise<INodeContext[]> = new Promise(async (resolve, reject) => {
         setTimeout(async () => {
@@ -35,11 +36,17 @@ export async function main(args: string[])  {
             const app = new XyoAppLauncher()
             await app.initialize(nodeId)
             const xyoNode = await app.start(false)
+            const originChain = await xyoNode.get<IXyoOriginChainRepository>(IResolvers.ORIGIN_CHAIN_REPOSITORY)
+            const signers = await originChain!.getSigners()
+            const pk = signers.map(s => s.publicKey)[0]
             nodes.push({
               app,
               id: nodeId,
               node: xyoNode,
+              publicKey: pk
             })
+
+            console.log(`Node with id ${nodeId} has public key ${pk.serializeHex()}`)
             resolve(nodes)
           } catch (e) {
             console.error(`There was an error starting up node ${nodeId}`)
@@ -53,8 +60,14 @@ export async function main(args: string[])  {
     const s1s2 = await XyoNode.doBoundWitness(
       s1.node,
       s2.node,
-      [rssiSerializationProvider.newInstance(-10)],
-      [rssiSerializationProvider.newInstance(-10)],
+      [
+        rssiSerializationProvider.newInstance(-10),
+        new XyoGps(32.725626, -117.161774)
+      ],
+      [
+        rssiSerializationProvider.newInstance(-10),
+        new XyoGps(32.725626, -117.161774)
+      ],
       [],
       []
     )
@@ -101,5 +114,6 @@ if (require.main === module) {
 interface INodeContext {
   app: XyoAppLauncher,
   id: string,
-  node: XyoNode
+  node: XyoNode,
+  publicKey: IXyoPublicKey
 }

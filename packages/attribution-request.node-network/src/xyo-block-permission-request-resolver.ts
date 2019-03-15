@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: xyo-block-permission-request-resolver.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Wednesday, 6th March 2019 2:47:07 pm
+ * @Last modified time: Thursday, 14th March 2019 6:02:47 pm
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -37,6 +37,10 @@ export class XyoBlockPermissionRequestResolver extends XyoBase implements IBlock
       }, timeout)
 
       const unsubscribeFn = this.nodeNetwork.requestPermissionForBlock(hash, (pk, permission) => {
+        if (permission) {
+          this.logInfo(`Resolved permission request with ${JSON.stringify(permission, null, 2)}`)
+        }
+
         if (resolved) {
           return
         }

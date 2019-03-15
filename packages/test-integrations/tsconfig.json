@@ -28,6 +28,7 @@
     {"path": "../errors"},
     {"path": "../hashing"},
     {"path": "../origin-chain"},
+    {"path": "../signing"},
     {"path": "../heuristics-common"},
   ]
 }

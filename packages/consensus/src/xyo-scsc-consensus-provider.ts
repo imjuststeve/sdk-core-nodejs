@@ -279,6 +279,7 @@ export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvi
   }
 
   public async canSubmitBlock(address: string, blockHeight?: BN): Promise<boolean> {
+    return address === '0x60CE3c27395F35E21BC2c9AaAa2Db06a89e21b2C'
     return true
     // const stakable = await this.web3Service.getOrInitializeSC("XyBlockProducer")
     // const numProducers = await stakable.methods.numBlockProducers().call()
@@ -344,7 +345,14 @@ export class XyoScscConsensusProvider extends XyoBase implements IConsensusProvi
     for (let i = 0; i < requestIds.length; i++) {
       const req: Promise<IRequest | undefined> = this.getRequestById(requestIds[i], blockHeight)
       if (req) {
-        idPromises.push(req)
+        idPromises.push(
+          req.then((r) => {
+            if (!r) return
+            r.xyoBounty = this.coerceBN(r.xyoBounty)
+            r.weiMining = this.coerceBN(r.weiMining)
+            return r
+          })
+        )
       }
     }
     const requestDatas = await Promise.all(idPromises)

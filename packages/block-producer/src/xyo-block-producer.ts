@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: xyo-block-producer.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Thursday, 14th March 2019 12:50:31 pm
+ * @Last modified time: Thursday, 14th March 2019 4:11:11 pm
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -108,7 +108,7 @@ export class XyoBlockProducer extends XyoDaemon {
 
     if (candidate.requests.length < MIN_TRANSACTIONS) {
       this.logInfo(
-        'There are ' + Object.keys(list).length + ' transactions in the transaction pool, ' +
+        'There are ' + candidate.requests.length + ' transactions in the transaction pool, ' +
         'which is not enough transactions to process'
       )
       return

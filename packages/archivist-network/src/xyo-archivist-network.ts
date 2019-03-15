@@ -4,7 +4,7 @@
  * @Email:  developer@xyfindables.com
  * @Filename: xyo-archivist-network.ts
  * @Last modified by: ryanxyo
- * @Last modified time: Tuesday, 12th March 2019 3:47:54 pm
+ * @Last modified time: Thursday, 14th March 2019 5:04:26 pm
  * @License: All Rights Reserved
  * @Copyright: Copyright XY | The Findables Company
  */
@@ -40,7 +40,7 @@ export class XyoArchivistNetwork extends XyoBase implements IXyoArchivistNetwork
       this.timeout = undefined
     }
 
-    this.timeout = XyoBase.interval(this.refreshPeers.bind(this), 60000)
+    this.timeout = XyoBase.interval(this.refreshPeers.bind(this), 30000)
   }
 
   public stopVettingPeers() {
@@ -142,7 +142,7 @@ export class XyoArchivistNetwork extends XyoBase implements IXyoArchivistNetwork
 
     // '0' as a marker means no marker
     if (!markers || markers.length === 0 || markers[0] === '0') {
-      return []
+      return intersections.items.map(strHash => this.serializationService.deserialize(strHash).hydrate())
     }
 
     const marker = markers[0]
