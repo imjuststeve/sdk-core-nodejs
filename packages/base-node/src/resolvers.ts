@@ -36,7 +36,7 @@ import { XyoLevelDbStorageProvider } from '@xyo-network/storage.leveldb'
 import { buildGraphQLServer } from '@xyo-network/graphql-apis'
 import { XyoAboutMeService } from '@xyo-network/about-me'
 import { IXyoArchivistRepository } from '@xyo-network/archivist-repository'
-import { createArchivistSqlRepository, ISqlConnectionDetails } from '@xyo-network/archivist-repository.sql'
+import { createArchivistSqlRepository, ISqlArchivistRepositoryConfig } from '@xyo-network/archivist-repository-sql'
 import { XyoError } from '@xyo-network/errors'
 import { XyoGraphQLServer } from '@xyo-network/graphql-server'
 import { IXyoArchivistNetwork, XyoArchivistNetwork } from '@xyo-network/archivist-network'
@@ -341,7 +341,7 @@ const peerConnectionDelegate: IXyoProvider<IXyoPeerConnectionDelegate, undefined
 
     const standardServerInteractionFactory: IXyoBoundWitnessInteractionFactory = {
       newInstance: (signers, payload) =>  {
-        return new XyoBoundWitnessServerInteraction(
+        return new XyoBoundWitnessInteraction(
           signers,
           payload,
           serialization,
@@ -359,7 +359,7 @@ const peerConnectionDelegate: IXyoProvider<IXyoPeerConnectionDelegate, undefined
 
     const takeOriginChainServerInteractionFactory: IXyoBoundWitnessInteractionFactory = {
       newInstance: (signers, payload) =>  {
-        return new XyoBoundWitnessServerInteraction(
+        return new XyoBoundWitnessInteraction(
           signers,
           payload,
           serialization,
@@ -441,7 +441,7 @@ const aboutMe: IXyoProvider<XyoAboutMeService, IXyoAboutMeConfig> = {
   }
 }
 
-const archivistRepository: IXyoProvider<IXyoArchivistRepository, ISqlConnectionDetails> = {
+const archivistRepository: IXyoProvider<IXyoArchivistRepository, ISqlArchivistRepositoryConfig> = {
   async get(container, config) {
     if (config && config.database && config.user && config.password && config.port && config.host) {
       const serialization = await container.get<IXyoSerializationService>(IResolvers.SERIALIZATION_SERVICE)
