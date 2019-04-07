@@ -68,6 +68,7 @@ export class XyoServerTcpNetwork extends XyoBase implements IXyoNetworkProvider 
   public async find(catalogue: IXyoNetworkProcedureCatalogue): Promise<IXyoNetworkPipe> {
     /** Create a server and listen on port */
     this.server = net.createServer()
+    this.logInfo(`Server listening on port:${this.port}`)
     this.server.listen(this.port, '0.0.0.0')
 
     /** Wait for a single XYO connection */
