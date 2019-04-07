@@ -24,19 +24,20 @@ export class XyoPeerDiscoveryService extends XyoBase implements IXyoPeerDiscover
   }
 
   public initialize(config: IXyoPeerDiscoveryConfig) {
+    this.logInfo(`Initialized with address ${config.address}, and key ${config.publicKey}`)
     this.publicKey = config.publicKey
     this.address = config.address
 
     this.onDiscovery((connection) => {
-      this.logInfo(`Discovered Peer`)
+      this.logInfo(`Discovered Peer ${connection} from address ${config.address} with key ${connection.publicKey}`)
       this.pool.addPeerConnection(connection)
     })
     this.onDisconnected((connection) => {
-      this.logInfo('Disconnected from Peer')
+      this.logInfo(`Disconnected from Peer ${connection} from address ${config.address} with key ${connection.publicKey}`)
       this.pool.removePeerConnection(connection)
     })
     this.transport.onConnection((connection) => {
-      this.logInfo(`Connected to Peer ${connection.publicKey}`)
+      this.logInfo(`Connected to Peer ${connection} from address ${config.address} with key ${connection.publicKey}`)
       this.handleBootstrap(connection)
       this.handleClose(connection)
     })
