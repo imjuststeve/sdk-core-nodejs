@@ -220,7 +220,7 @@ export class XyoServerTcpNetwork extends XyoBase implements IXyoNetworkProvider 
   private scheduleDisconnect(c: net.Socket) {
     this.cancelDisconnect()
     this.disconnectTimeout = XyoBase.timeout(() => {
-      this.logInfo(`Connection timed out while negotiating`)
+      this.logInfo(`Connection timed out while negotiating with host ${this.connection && this.connection.remoteAddress}:${this.connection && this.connection.remotePort}`)
       this.connection = undefined
       c.end()
     }, 3000)
