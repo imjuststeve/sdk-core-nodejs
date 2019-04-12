@@ -68,6 +68,7 @@ export class XyoServerTcpNetwork extends XyoBase implements IXyoNetworkProvider 
   public async find(catalogue: IXyoNetworkProcedureCatalogue): Promise<IXyoNetworkPipe> {
     /** Create a server and listen on port */
     this.server = net.createServer()
+    this.logInfo(`Server listening on port:${this.port}`)
     this.server.listen(this.port, '0.0.0.0')
 
     /** Wait for a single XYO connection */
@@ -219,7 +220,7 @@ export class XyoServerTcpNetwork extends XyoBase implements IXyoNetworkProvider 
   private scheduleDisconnect(c: net.Socket) {
     this.cancelDisconnect()
     this.disconnectTimeout = XyoBase.timeout(() => {
-      this.logInfo(`Connection timed out while negotiating`)
+      this.logInfo(`Connection timed out while negotiating with host ${this.connection && this.connection.remoteAddress}:${this.connection && this.connection.remotePort}`)
       this.connection = undefined
       c.end()
     }, 3000)
