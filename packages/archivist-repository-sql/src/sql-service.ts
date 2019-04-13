@@ -87,17 +87,20 @@ export class SqlService extends XyoBase {
     const createdConnection = await (new Promise((resolve, reject) => {
       c.connect((err: Error | undefined) => {
         if (err) {
+          this.logError(err);
           this.logInfo(`Failed get connection. Try number ${tryNumber} of ${maxTries}`)
           if (tryNumber === maxTries) {
             return reject(err)
           }
 
           return XyoBase.timeout(() => {
+            this.logInfo(`Database timeout`)
             return this.getOrCreateConnection(maxTries, tryNumber + 1).then(resolve).catch(reject)
           }, 1000 * Math.pow(2, tryNumber)) // exponential back-off
         }
 
         this.connection = c
+        this.logInfo(`Connection ${c}`)
         return resolve(this.connection)
       })
     }) as Promise<Connection>)
