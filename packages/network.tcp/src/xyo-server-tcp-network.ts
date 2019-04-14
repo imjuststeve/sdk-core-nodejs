@@ -237,6 +237,6 @@ export class XyoServerTcpNetwork extends XyoBase implements IXyoNetworkProvider 
   }
 
   private formatLogInfo() {
-    return `${this.server.address} - ${this.connection && this.connection.remoteAddress}:${this.connection && this.connection.remotePort} - ${this.id}`
+    return `${this.server && this.server.address} - ${this.connection && this.connection.remoteAddress}:${this.connection && this.connection.remotePort} - ${this.id}`
   }
 }
