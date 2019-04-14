@@ -36,7 +36,7 @@ export class XyoServerTcpNetwork extends XyoBase implements IXyoNetworkProvider 
    */
 
   private server: net.Server | undefined
-  private id: number
+  private id: number = 0
   private static currentId: number
   /**
    * Represents the current connection to a peer
@@ -52,7 +52,7 @@ export class XyoServerTcpNetwork extends XyoBase implements IXyoNetworkProvider 
 
   constructor (public port?: number) {
     super()
-    this.id = XyoServerTcpNetwork.currentId++;
+    this.id = XyoServerTcpNetwork.currentId++
   }
 
   public setPort(port: number) {
@@ -69,7 +69,7 @@ export class XyoServerTcpNetwork extends XyoBase implements IXyoNetworkProvider 
   public async find(catalogue: IXyoNetworkProcedureCatalogue): Promise<IXyoNetworkPipe> {
     /** Create a server and listen on port */
     this.server = net.createServer()
-    this.logInfo(`Server listening on port:${this.port} - id:${this.id}`)
+    this.logInfo(`Server listening on port:${this.port} - ${this.formatLogInfo()}`)
     this.server.listen(this.port, '0.0.0.0')
 
     /** Wait for a single XYO connection */
@@ -80,14 +80,14 @@ export class XyoServerTcpNetwork extends XyoBase implements IXyoNetworkProvider 
 
     /** Clears state so this tcp-network instance can be used again */
     const onConnectionClose = () => {
-      this.logInfo(`Closing connection with host ${this.connection && this.connection.remoteAddress}:${this.connection && this.connection.remotePort} - id:${this.id}`)
+      this.logInfo(`Closing connection with host  ${this.formatLogInfo()}`)
       connectionResult.socket.removeListener('close', onConnectionClose)
       connectionResult.socket.removeListener('error', onConnectionError)
       this.connection = undefined
     }
 
     const onConnectionError = (err: Error) => {
-      this.logInfo(`An error occurred on an open TCP connection - id:${this.id}`, err)
+      this.logInfo(`An error occurred on an open TCP connection ${err} -  ${this.formatLogInfo()}`)
       this.connection = undefined
     }
 
@@ -95,6 +95,7 @@ export class XyoServerTcpNetwork extends XyoBase implements IXyoNetworkProvider 
 
     connectionResult.socket.on('error', onConnectionError)
 
+    this.logInfo(`Returning connection result ${connectionResult} - ${this.formatLogInfo()}`)
     return new XyoTcpNetworkPipe(connectionResult)
   }
 
@@ -135,10 +136,10 @@ export class XyoServerTcpNetwork extends XyoBase implements IXyoNetworkProvider 
   private getConnection(server: net.Server, catalogue: IXyoNetworkProcedureCatalogue): Promise<XyoTcpConnectionResult> {
     return new Promise((resolve, reject) => {
       const onConnection = (c: net.Socket) => {
-        this.logInfo(`Server Connection made with ${c.remoteAddress || 'unknown ip'} - id:${this.id}`)
+        this.logInfo(`Server Connection made with ${c.remoteAddress || 'unknown ip'} -  ${this.formatLogInfo()}`)
 
         if (this.connection) { // Prevents multiple connections
-          this.logInfo(`Connection already exists, will close incoming connection`)
+          this.logInfo(`Connection already exists, will close incoming connection -  ${this.formatLogInfo()}`)
           c.end()
           return
         }
@@ -148,14 +149,14 @@ export class XyoServerTcpNetwork extends XyoBase implements IXyoNetworkProvider 
 
         // tslint:disable-next-line:ter-prefer-arrow-callback
         const onConnectionClose = (hasError: boolean) => {
-          this.logInfo(`Connection closed from host ${this.connection && this.connection.remoteAddress}:${this.connection && this.connection.remotePort} - hasError=${hasError} - id:${this.id}`)
+          this.logInfo(`Connection closed from host  ${this.formatLogInfo()}`)
           this.cancelDisconnect()
           this.connection = undefined
         }
 
         // tslint:disable-next-line:ter-prefer-arrow-callback
         const onError = (err: Error) => {
-          this.logInfo(`An error error getting a connection - id:${this.id}`, err)
+          this.logInfo(`An error error getting a connection ${err} -  ${this.formatLogInfo()}`)
           this.cancelDisconnect()
           this.connection = undefined
         }
@@ -167,7 +168,7 @@ export class XyoServerTcpNetwork extends XyoBase implements IXyoNetworkProvider 
         let sizeOfPayload: number | undefined
 
         const onData = (chunk: Buffer) => {
-          this.logInfo(`onData from host ${this.connection && this.connection.remoteAddress}:${this.connection && this.connection.remotePort} - id:${this.id}`)
+          this.logInfo(`onData from host  ${this.formatLogInfo()}`)
           this.scheduleDisconnect(c)
           data = Buffer.concat([
             data || Buffer.alloc(0),
@@ -175,17 +176,17 @@ export class XyoServerTcpNetwork extends XyoBase implements IXyoNetworkProvider 
           ])
 
           if (data.length < 4) {
-            this.logInfo(`Connection data length < 4 from ${this.connection && this.connection.remoteAddress}:${this.connection && this.connection.remotePort} - id:${this.id}`)
+            this.logInfo(`Connection data length < 4 from  ${this.formatLogInfo()}`)
             return
           }
 
           if (sizeOfPayload === undefined) {
             sizeOfPayload = data.readUInt32BE(0)
-            this.logInfo(`Expecting message of size ${sizeOfPayload} - id:${this.id}`)
+            this.logInfo(`Expecting message of size ${sizeOfPayload} -  ${this.formatLogInfo()}`)
           }
 
           if (data.length > sizeOfPayload) { // too many, corrupt payload
-            this.logInfo(`Hanging up, payload too big ${data.length} - id:${this.id}`)
+            this.logInfo(`Hanging up, payload too big ${data.length} -  ${this.formatLogInfo()}`)
             this.connection = undefined
             this.cancelDisconnect()
             c.destroy() // destroy because this might be an attack
@@ -218,19 +219,23 @@ export class XyoServerTcpNetwork extends XyoBase implements IXyoNetworkProvider 
 
   private cancelDisconnect() {
     if (this.disconnectTimeout) {
-      this.logInfo(`Canceling disconnect for connection ${this.connection && this.connection.remoteAddress}:${this.connection && this.connection.remotePort} - id:${this.id}`)
+      this.logInfo(`Canceling disconnect for connection ${this.formatLogInfo()}`)
       this.disconnectTimeout()
       this.disconnectTimeout = undefined
     }
   }
 
   private scheduleDisconnect(c: net.Socket) {
-    this.logInfo(`Scheduling disconnect with host ${this.connection && this.connection.remoteAddress}:${this.connection && this.connection.remotePort} - id:${this.id}`)
+    this.logInfo(`Scheduling disconnect with host ${this.formatLogInfo()}`)
     this.cancelDisconnect()
     this.disconnectTimeout = XyoBase.timeout(() => {
-      this.logInfo(`Connection timed out while negotiating with host ${this.connection && this.connection.remoteAddress}:${this.connection && this.connection.remotePort}`)
+      this.logInfo(`Connection timed out while negotiating with host ${this.formatLogInfo()}`)
       this.connection = undefined
       c.end()
     }, 5000)
+  }
+
+  private formatLogInfo() {
+    return `${this.server} - ${this.connection && this.connection.remoteAddress}:${this.connection && this.connection.remotePort} - ${this.id}`
   }
 }
