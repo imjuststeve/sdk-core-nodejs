@@ -52,7 +52,8 @@ export class XyoServerTcpNetwork extends XyoBase implements IXyoNetworkProvider 
 
   constructor (public port?: number) {
     super()
-    this.id = XyoServerTcpNetwork.currentId++
+    XyoServerTcpNetwork.currentId =  XyoServerTcpNetwork.currentId + 1
+    this.id = XyoServerTcpNetwork.currentId
   }
 
   public setPort(port: number) {
@@ -236,6 +237,6 @@ export class XyoServerTcpNetwork extends XyoBase implements IXyoNetworkProvider 
   }
 
   private formatLogInfo() {
-    return `${this.server} - ${this.connection && this.connection.remoteAddress}:${this.connection && this.connection.remotePort} - ${this.id}`
+    return `${this.server.address} - ${this.connection && this.connection.remoteAddress}:${this.connection && this.connection.remotePort} - ${this.id}`
   }
 }
