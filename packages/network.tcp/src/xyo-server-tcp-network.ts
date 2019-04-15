@@ -54,9 +54,11 @@ export class XyoServerTcpNetwork extends XyoBase implements IXyoNetworkProvider 
     super()
     XyoServerTcpNetwork.currentId =  XyoServerTcpNetwork.currentId + 1
     this.id = XyoServerTcpNetwork.currentId
+    this.logInfo(`constructor entered with port ${port} for connection ${this.id} - ${this.formatLogInfo()}`)
   }
 
   public setPort(port: number) {
+    this.logInfo(`port set to ${port} for connection ${this.formatLogInfo()}`)
     this.port = port
   }
 
