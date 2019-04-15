@@ -37,7 +37,7 @@ export class XyoServerTcpNetwork extends XyoBase implements IXyoNetworkProvider 
 
   private server: net.Server | undefined
   private id: number = 0
-  private static currentId: number
+  private static currentId: number = 0
   /**
    * Represents the current connection to a peer
    */
@@ -237,6 +237,6 @@ export class XyoServerTcpNetwork extends XyoBase implements IXyoNetworkProvider 
   }
 
   private formatLogInfo() {
-    return `${this.server && this.server.address} - ${this.connection && this.connection.remoteAddress}:${this.connection && this.connection.remotePort} - ${this.id}`
+    return `${this.server && this.server.address()} - ${this.connection && this.connection.remoteAddress}:${this.connection && this.connection.remotePort} - ${this.id}`
   }
 }
